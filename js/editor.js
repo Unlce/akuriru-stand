@@ -1,5 +1,13 @@
 // Image Editor for Acrylic Stand Creator
 
+// Configuration constants
+const EDITOR_CONFIG = {
+    MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+    ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
+    MAX_CANVAS_WIDTH: 400,
+    MAX_CANVAS_HEIGHT: 500
+};
+
 class ImageEditor {
     constructor() {
         this.image = null;
@@ -124,9 +132,15 @@ class ImageEditor {
     }
 
     loadImage(file) {
-        // Validate file size (10MB max)
-        if (file.size > 10 * 1024 * 1024) {
-            alert('ファイルサイズは10MB以下にしてください。');
+        // Validate file size
+        if (file.size > EDITOR_CONFIG.MAX_FILE_SIZE) {
+            alert(`ファイルサイズは${EDITOR_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB以下にしてください。`);
+            return;
+        }
+
+        // Validate file type
+        if (!EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
+            alert('JPG、PNG、GIF形式の画像ファイルを選択してください。');
             return;
         }
 
@@ -160,8 +174,8 @@ class ImageEditor {
         if (!this.image || !this.canvas || !this.ctx) return;
 
         // Set canvas size
-        const maxWidth = 400;
-        const maxHeight = 500;
+        const maxWidth = EDITOR_CONFIG.MAX_CANVAS_WIDTH;
+        const maxHeight = EDITOR_CONFIG.MAX_CANVAS_HEIGHT;
         
         let width = this.image.width;
         let height = this.image.height;

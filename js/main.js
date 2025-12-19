@@ -166,6 +166,13 @@ class ModalManager {
         if (modal) {
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            modal.setAttribute('aria-hidden', 'false');
+            
+            // Focus first input in modal
+            const firstInput = modal.querySelector('input, button, textarea');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
         }
     }
 
@@ -174,6 +181,7 @@ class ModalManager {
         if (modal) {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            modal.setAttribute('aria-hidden', 'true');
         }
     }
 
@@ -181,8 +189,10 @@ class ModalManager {
         // Close modal when clicking on close button
         document.querySelectorAll('.close-modal').forEach(btn => {
             btn.addEventListener('click', function() {
-                this.closest('.modal').style.display = 'none';
+                const modal = this.closest('.modal');
+                modal.style.display = 'none';
                 document.body.style.overflow = 'auto';
+                modal.setAttribute('aria-hidden', 'true');
             });
         });
 
@@ -192,8 +202,22 @@ class ModalManager {
                 if (e.target === this) {
                     this.style.display = 'none';
                     document.body.style.overflow = 'auto';
+                    this.setAttribute('aria-hidden', 'true');
                 }
             });
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    if (modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                        modal.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
         });
     }
 }

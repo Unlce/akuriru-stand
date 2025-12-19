@@ -116,9 +116,23 @@ class OrderManager {
             return;
         }
 
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(customerEmail)) {
+            alert('有効なメールアドレスを入力してください。');
+            return;
+        }
+
+        // Phone validation (Japanese format)
+        const phoneRegex = /^[\d\-\(\)\s]+$/;
+        if (!phoneRegex.test(customerPhone)) {
+            alert('有効な電話番号を入力してください。');
+            return;
+        }
+
         // Create order object
         const order = {
-            id: Date.now(),
+            id: `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             imageData: window.imageEditor.getImageData(),
             size: this.selectedSize,
             baseType: window.imageEditor.getBaseType(),

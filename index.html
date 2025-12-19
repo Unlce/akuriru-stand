@@ -208,10 +208,10 @@
     </section>
 
     <!-- Payment Modal -->
-    <div id="payment-modal" class="modal" style="display: none;">
+    <div id="payment-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" aria-hidden="true" style="display: none;">
         <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>お支払い</h2>
+            <span class="close-modal" role="button" aria-label="閉じる" tabindex="0">&times;</span>
+            <h2 id="payment-modal-title">お支払い</h2>
             
             <div class="order-summary">
                 <h3>注文内容</h3>
@@ -266,9 +266,9 @@
     </div>
 
     <!-- Success Modal -->
-    <div id="success-modal" class="modal" style="display: none;">
+    <div id="success-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" aria-hidden="true" style="display: none;">
         <div class="modal-content success">
-            <h2>✓ 注文が完了しました！</h2>
+            <h2 id="success-modal-title">✓ 注文が完了しました！</h2>
             <p>ご注文ありがとうございます。</p>
             <p>確認メールを送信しました。</p>
             <p>PayPayでのお支払いをお願いいたします。</p>
@@ -304,8 +304,8 @@
         </div>
     </footer>
 
-    <script src="js/main.js"></script>
-    <script src="js/editor.js"></script>
-    <script src="js/payment.js"></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/editor.js" defer></script>
+    <script src="js/payment.js" defer></script>
 </body>
 </html>
