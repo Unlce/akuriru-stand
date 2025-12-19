@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アクリルスタンド作成サービス | オリジナルグッズを手軽に</title>
+    <meta name="description" content="好きな画像でオリジナルアクリルスタンドを作成・注文できるウェブサイト。1個から注文可能、透明感のある美しいデザイン。">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>✨ アクリルスタンド工房</h1>
+                </div>
+                <nav class="nav">
+                    <a href="#hero" class="nav-link">ホーム</a>
+                    <a href="#how-to-use" class="nav-link">使い方</a>
+                    <a href="#gallery" class="nav-link">ギャラリー</a>
+                    <a href="#creator" class="nav-link">作成する</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2 class="hero-title">あなたの大切な思い出を<br>美しいアクリルスタンドに</h2>
+                <p class="hero-description">
+                    好きな写真やイラストを使って、世界に一つだけのオリジナルアクリルスタンドを作成できます。<br>
+                    透明感のある美しい仕上がりで、インテリアやデスクの飾りに最適。<br>
+                    1個から注文可能、簡単な編集ツールで誰でも手軽に作成できます。
+                </p>
+                <a href="#creator" class="cta-button">今すぐ作成する</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Use Section -->
+    <section id="how-to-use" class="how-to-use">
+        <div class="container">
+            <h2 class="section-title">使い方</h2>
+            <p class="section-subtitle">3つの簡単なステップでオリジナルアクリルスタンドが完成</p>
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">📷</div>
+                    <h3 class="step-title">画像をアップロード</h3>
+                    <p class="step-description">お気に入りの写真やイラストをドラッグ＆ドロップ、またはクリックして選択します。</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">✂️</div>
+                    <h3 class="step-title">編集・プレビュー</h3>
+                    <p class="step-description">トリミング、回転、サイズ調整を行い、台座デザインを選択。完成イメージをプレビューできます。</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">💳</div>
+                    <h3 class="step-title">注文・支払い</h3>
+                    <p class="step-description">サイズを選択し、PayPayで簡単にお支払い。1個から注文できます。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h2 class="section-title">ギャラリー</h2>
+            <p class="section-subtitle">みんなが作成したアクリルスタンド</p>
+            <div id="gallery-grid" class="gallery-grid">
+                <!-- Gallery items will be dynamically inserted here -->
+            </div>
+            <div id="gallery-empty" class="gallery-empty" style="display: none;">
+                <p>まだ作品がありません。最初の作品を作成しましょう！</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Creator Tool Section -->
+    <section id="creator" class="creator">
+        <div class="container">
+            <h2 class="section-title">アクリルスタンドを作成</h2>
+            
+            <div class="creator-content">
+                <!-- Upload Area -->
+                <div class="upload-section">
+                    <div id="upload-area" class="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">画像をドラッグ＆ドロップ</p>
+                        <p class="upload-subtext">または</p>
+                        <button id="select-file-btn" class="select-file-btn">ファイルを選択</button>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                        <p class="upload-note">対応形式: JPG, PNG, GIF (最大10MB)</p>
+                    </div>
+                </div>
+
+                <!-- Editor Area -->
+                <div id="editor-section" class="editor-section" style="display: none;">
+                    <div class="editor-container">
+                        <div class="preview-area">
+                            <h3>プレビュー</h3>
+                            <div class="acrylic-stand-preview">
+                                <canvas id="preview-canvas"></canvas>
+                                <div class="stand-base">
+                                    <div id="selected-base" class="base-default"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="editor-controls">
+                            <h3>編集ツール</h3>
+                            
+                            <div class="control-group">
+                                <label>回転</label>
+                                <div class="button-group">
+                                    <button id="rotate-left" class="control-btn">↶ 左回転</button>
+                                    <button id="rotate-right" class="control-btn">↷ 右回転</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>サイズ調整</label>
+                                <input type="range" id="scale-slider" min="50" max="200" value="100" class="slider">
+                                <span id="scale-value">100%</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label>台座デザイン</label>
+                                <div class="base-options">
+                                    <button class="base-option base-default active" data-base="default">
+                                        <div class="base-preview base-default"></div>
+                                        <span>デフォルト</span>
+                                    </button>
+                                    <button class="base-option base-round" data-base="round">
+                                        <div class="base-preview base-round"></div>
+                                        <span>ラウンド</span>
+                                    </button>
+                                    <button class="base-option base-square" data-base="square">
+                                        <div class="base-preview base-square"></div>
+                                        <span>スクエア</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="reset-image" class="control-btn secondary">画像をリセット</button>
+                        </div>
+                    </div>
+
+                    <!-- Order Section -->
+                    <div class="order-section">
+                        <h3>サイズと料金</h3>
+                        <div class="size-options">
+                            <label class="size-option">
+                                <input type="radio" name="size" value="card" data-price="1000" checked>
+                                <div class="size-card">
+                                    <div class="size-name">カードサイズ</div>
+                                    <div class="size-price">¥1,000</div>
+                                    <div class="size-dimensions">約 86×54mm</div>
+                                </div>
+                            </label>
+                            <label class="size-option">
+                                <input type="radio" name="size" value="postcard" data-price="2000">
+                                <div class="size-card">
+                                    <div class="size-name">はがきサイズ</div>
+                                    <div class="size-price">¥2,000</div>
+                                    <div class="size-dimensions">約 148×100mm</div>
+                                </div>
+                            </label>
+                            <label class="size-option">
+                                <input type="radio" name="size" value="a5" data-price="3000">
+                                <div class="size-card">
+                                    <div class="size-name">A5サイズ</div>
+                                    <div class="size-price">¥3,000</div>
+                                    <div class="size-dimensions">約 210×148mm</div>
+                                </div>
+                            </label>
+                            <label class="size-option">
+                                <input type="radio" name="size" value="a4" data-price="5000">
+                                <div class="size-card">
+                                    <div class="size-name">A4サイズ</div>
+                                    <div class="size-price">¥5,000</div>
+                                    <div class="size-dimensions">約 297×210mm</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="quantity-section">
+                            <label for="quantity">数量</label>
+                            <input type="number" id="quantity" min="1" value="1" class="quantity-input">
+                        </div>
+
+                        <div class="total-price">
+                            <span>合計金額:</span>
+                            <span id="total-price" class="price-amount">¥1,000</span>
+                        </div>
+
+                        <button id="proceed-to-payment" class="cta-button">注文する</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>お支払い</h2>
+            
+            <div class="order-summary">
+                <h3>注文内容</h3>
+                <div class="summary-item">
+                    <span>サイズ:</span>
+                    <span id="summary-size">カードサイズ</span>
+                </div>
+                <div class="summary-item">
+                    <span>数量:</span>
+                    <span id="summary-quantity">1個</span>
+                </div>
+                <div class="summary-item total">
+                    <span>合計金額:</span>
+                    <span id="summary-total">¥1,000</span>
+                </div>
+            </div>
+
+            <div class="payment-section">
+                <h3>PayPay決済</h3>
+                <p class="payment-note">※ このサイトが料金を立て替える形式となります</p>
+                
+                <form id="payment-form" class="payment-form">
+                    <div class="form-group">
+                        <label for="customer-name">お名前 <span class="required">*</span></label>
+                        <input type="text" id="customer-name" required placeholder="山田 太郎">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-email">メールアドレス <span class="required">*</span></label>
+                        <input type="email" id="customer-email" required placeholder="example@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-phone">電話番号 <span class="required">*</span></label>
+                        <input type="tel" id="customer-phone" required placeholder="090-1234-5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-address">配送先住所 <span class="required">*</span></label>
+                        <textarea id="customer-address" required placeholder="〒123-4567&#10;東京都渋谷区..."></textarea>
+                    </div>
+
+                    <div class="paypay-section">
+                        <div class="paypay-logo">PayPay</div>
+                        <p class="paypay-instruction">注文確定後、PayPayアプリで支払いを完了してください</p>
+                    </div>
+
+                    <button type="submit" class="cta-button">注文を確定する</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal" style="display: none;">
+        <div class="modal-content success">
+            <h2>✓ 注文が完了しました！</h2>
+            <p>ご注文ありがとうございます。</p>
+            <p>確認メールを送信しました。</p>
+            <p>PayPayでのお支払いをお願いいたします。</p>
+            <button id="close-success" class="cta-button">閉じる</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>アクリルスタンド工房</h4>
+                    <p>オリジナルアクリルスタンドを簡単作成</p>
+                </div>
+                <div class="footer-section">
+                    <h4>サービス</h4>
+                    <ul>
+                        <li><a href="#creator">アクリルスタンド作成</a></li>
+                        <li><a href="#gallery">ギャラリー</a></li>
+                        <li><a href="#how-to-use">使い方</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>お問い合わせ</h4>
+                    <p>Email: info@acrylic-stand.jp</p>
+                    <p>Tel: 03-1234-5678</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 アクリルスタンド工房. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/payment.js"></script>
+</body>
+</html>
