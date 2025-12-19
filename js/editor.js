@@ -63,10 +63,10 @@ class ImageEditor {
                 
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                     const file = e.dataTransfer.files[0];
-                    if (file.type.startsWith('image/')) {
+                    if (EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
                         this.loadImage(file);
                     } else {
-                        alert('画像ファイルを選択してください。');
+                        alert('JPG、PNG、GIF形式の画像ファイルを選択してください。');
                     }
                 }
             });

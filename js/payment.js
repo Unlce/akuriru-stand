@@ -124,15 +124,16 @@ class OrderManager {
         }
 
         // Phone validation (Japanese format)
-        const phoneRegex = /^[\d\-\(\)\s]+$/;
-        if (!phoneRegex.test(customerPhone)) {
-            alert('有効な電話番号を入力してください。');
+        // Accepts formats like: 03-1234-5678, 090-1234-5678, 0312345678, etc.
+        const phoneRegex = /^[\d\-\(\)\s]{10,}$/;
+        if (!phoneRegex.test(customerPhone) || customerPhone.replace(/\D/g, '').length < 10) {
+            alert('有効な電話番号を入力してください（10桁以上の数字）。');
             return;
         }
 
         // Create order object
         const order = {
-            id: `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
             imageData: window.imageEditor.getImageData(),
             size: this.selectedSize,
             baseType: window.imageEditor.getBaseType(),
