@@ -13,6 +13,13 @@
     box-sizing: border-box;
 }
 
+/* Mobile scrolling fix */
+html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -567,6 +574,14 @@ td strong {
    Responsive Design
    ======================================== */
 @media (max-width: 768px) {
+    /* Mobile scrolling fix */
+    html, body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .header {
         flex-direction: column;
         gap: 15px;
