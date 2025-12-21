@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理画面デモ - アクリルスタンド工房</title>
+    <link rel="stylesheet" href="../admin/css/admin.css">
+</head>
+<body>
+    <!-- 管理画面デモ -->
+    <div class="container">
+        <div class="header">
+            <h1>✨ アクリルスタンド工房 管理画面</h1>
+            <a href="#" class="btn btn-secondary">ログアウト</a>
+        </div>
+        
+        <!-- 統計情報 -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3>総注文数</h3>
+                <div class="number">5</div>
+            </div>
+            <div class="stat-card">
+                <h3>新規注文</h3>
+                <div class="number">2</div>
+            </div>
+            <div class="stat-card">
+                <h3>処理中</h3>
+                <div class="number">2</div>
+            </div>
+            <div class="stat-card">
+                <h3>完了</h3>
+                <div class="number">1</div>
+            </div>
+        </div>
+        
+        <!-- フィルター -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="searchInput">🔍 検索</label>
+                <input type="text" id="searchInput" placeholder="注文番号、顧客名、メールアドレスで検索...">
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter">ステータス</label>
+                <select id="statusFilter">
+                    <option value="">すべて</option>
+                    <option value="pending">新規</option>
+                    <option value="processing">処理中</option>
+                    <option value="completed">完了</option>
+                    <option value="cancelled">キャンセル</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 注文一覧テーブル -->
+        <div class="table-container">
+            <table id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>注文番号</th>
+                        <th>日時</th>
+                        <th>顧客名</th>
+                        <th>商品画像</th>
+                        <th>サイズ</th>
+                        <th>台座</th>
+                        <th>金額</th>
+                        <th>ステータス</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="showDemoModal()">
+                        <td><strong>AS-20251221-0001</strong></td>
+                        <td>2025/12/21<br><small style="color: #999;">10:30</small></td>
+                        <td>田中 太郎</td>
+                        <td>📷</td>
+                        <td>カード</td>
+                        <td>default</td>
+                        <td>¥2,500</td>
+                        <td>
+                            <span class="status status-pending">
+                                新規
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); showDemoModal()">
+                                詳細
+                            </button>
+                        </td>
+                    </tr>
+                    <tr onclick="showDemoModal()">
+                        <td><strong>AS-20251220-0002</strong></td>
+                        <td>2025/12/20<br><small style="color: #999;">15:45</small></td>
+                        <td>佐藤 花子</td>
+                        <td>📷</td>
+                        <td>はがき</td>
+                        <td>heart</td>
+                        <td>¥3,000</td>
+                        <td>
+                            <span class="status status-processing">
+                                処理中
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); showDemoModal()">
+                                詳細
+                            </button>
+                        </td>
+                    </tr>
+                    <tr onclick="showDemoModal()">
+                        <td><strong>AS-20251220-0001</strong></td>
+                        <td>2025/12/20<br><small style="color: #999;">09:15</small></td>
+                        <td>鈴木 一郎</td>
+                        <td>📷</td>
+                        <td>A5</td>
+                        <td>default</td>
+                        <td>¥3,500</td>
+                        <td>
+                            <span class="status status-processing">
+                                処理中
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); showDemoModal()">
+                                詳細
+                            </button>
+                        </td>
+                    </tr>
+                    <tr onclick="showDemoModal()">
+                        <td><strong>AS-20251219-0003</strong></td>
+                        <td>2025/12/19<br><small style="color: #999;">18:20</small></td>
+                        <td>高橋 美咲</td>
+                        <td>📷</td>
+                        <td>A4</td>
+                        <td>circle</td>
+                        <td>¥5,500</td>
+                        <td>
+                            <span class="status status-completed">
+                                完了
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); showDemoModal()">
+                                詳細
+                            </button>
+                        </td>
+                    </tr>
+                    <tr onclick="showDemoModal()">
+                        <td><strong>AS-20251219-0002</strong></td>
+                        <td>2025/12/19<br><small style="color: #999;">14:00</small></td>
+                        <td>伊藤 健太</td>
+                        <td>📷</td>
+                        <td>カード</td>
+                        <td>default</td>
+                        <td>¥2,000</td>
+                        <td>
+                            <span class="status status-pending">
+                                新規
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="event.stopPropagation(); showDemoModal()">
+                                詳細
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Order Detail Modal -->
+    <div id="orderDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 注文詳細</h2>
+                <button class="close-modal" onclick="closeDemoModal()">&times;</button>
+            </div>
+            <div id="orderDetailContent">
+                <div class="order-detail">
+                    <div class="detail-section">
+                        <h3>📋 注文情報</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">注文番号</span>
+                            <span class="detail-value"><strong>AS-20251221-0001</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">注文日時</span>
+                            <span class="detail-value">2025年12月21日 10:30</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">ステータス</span>
+                            <span class="detail-value">
+                                <span class="status status-pending">
+                                    新規
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>👤 お客様情報</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">お名前</span>
+                            <span class="detail-value">田中 太郎</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">メールアドレス</span>
+                            <span class="detail-value">tanaka@example.com</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">電話番号</span>
+                            <span class="detail-value">090-1234-5678</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">配送先住所</span>
+                            <span class="detail-value">〒123-4567 東京都渋谷区1-2-3</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>🎨 商品情報</h3>
+                        <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 8px; margin: 15px 0;">
+                            <p style="font-size: 48px;">📷</p>
+                            <p style="color: #999;">商品画像プレビュー</p>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">サイズ</span>
+                            <span class="detail-value">カードサイズ</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">台座タイプ</span>
+                            <span class="detail-value">default</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">数量</span>
+                            <span class="detail-value">1個</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>💰 金額</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">商品単価</span>
+                            <span class="detail-value">¥2,000</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">送料</span>
+                            <span class="detail-value">¥500</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label"><strong>合計金額</strong></span>
+                            <span class="detail-value"><strong>¥2,500</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="status-actions">
+                        <button class="btn" onclick="alert('ステータスを「新規」に変更しました（デモ）')">
+                            🆕 新規にする
+                        </button>
+                        <button class="btn" onclick="alert('ステータスを「処理中」に変更しました（デモ）')">
+                            🔄 処理中にする
+                        </button>
+                        <button class="btn" onclick="alert('ステータスを「完了」に変更しました（デモ）')">
+                            ✅ 完了にする
+                        </button>
+                        <button class="btn btn-secondary" onclick="alert('ステータスを「キャンセル」に変更しました（デモ）')">
+                            ❌ キャンセルする
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showDemoModal() {
+            document.getElementById('orderDetailModal').classList.add('active');
+        }
+        
+        function closeDemoModal() {
+            document.getElementById('orderDetailModal').classList.remove('active');
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('orderDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDemoModal();
+            }
+        });
+    </script>
+</body>
+</html>
