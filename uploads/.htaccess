@@ -3,14 +3,12 @@
 
 # Disable script execution
 <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Only allow image files
 <FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
-    Order allow,deny
-    Allow from all
+    Require all granted
 </FilesMatch>
 
 # Disable directory listing
@@ -18,8 +16,7 @@ Options -Indexes
 
 # Prevent access to hidden files
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Set proper MIME types for images

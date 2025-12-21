@@ -4,10 +4,9 @@
 # Disable directory listing
 Options -Indexes
 
-# Protect PHP files from direct access (except API endpoints)
+# Protect config.php from direct access
 <FilesMatch "^config\.php$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Enable error display for development (disable in production)
