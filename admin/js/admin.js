@@ -136,13 +136,17 @@ function createOrderRow(order) {
     const formattedDate = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
     const formattedTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     
+    // 画像パスの検証
+    const imagePath = sanitizeImagePath(order.image_path);
+    const imageHtml = imagePath 
+        ? `<img src="../${escapeHtml(imagePath)}" class="image-thumbnail" alt="商品画像">`
+        : '📷';
+    
     row.innerHTML = `
         <td><strong>${escapeHtml(order.order_number)}</strong></td>
         <td>${formattedDate}<br><small style="color: #999;">${formattedTime}</small></td>
         <td>${escapeHtml(order.customer_name)}</td>
-        <td>
-            ${order.image_path ? `<img src="../${escapeHtml(order.image_path)}" class="image-thumbnail" alt="商品画像">` : '📷'}
-        </td>
+        <td>${imageHtml}</td>
         <td>${sizeNames[order.size] || order.size}</td>
         <td>${escapeHtml(order.base_type || 'default')}</td>
         <td>¥${Number(order.total_price || 0).toLocaleString()}</td>
@@ -215,6 +219,12 @@ function displayOrderDetailModal(order) {
     const date = new Date(order.created_at);
     const formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     
+    // 画像パスの検証
+    const imagePath = sanitizeImagePath(order.image_path);
+    const imageHtml = imagePath
+        ? `<img src="../${escapeHtml(imagePath)}" class="order-image" alt="商品画像">`
+        : '<p>画像なし</p>';
+    
     content.innerHTML = `
         <div class="order-detail">
             <div class="detail-section">
@@ -259,9 +269,7 @@ function displayOrderDetailModal(order) {
             
             <div class="detail-section">
                 <h3>🎨 商品情報</h3>
-                ${order.image_path ? `
-                    <img src="../${escapeHtml(order.image_path)}" class="order-image" alt="商品画像">
-                ` : '<p>画像なし</p>'}
+                ${imageHtml}
                 <div class="detail-row">
                     <span class="detail-label">サイズ</span>
                     <span class="detail-value">${sizeNames[order.size] || order.size}</span>
@@ -428,6 +436,8 @@ function showLoading(show) {
  * エラーメッセージを表示
  */
 function showError(message) {
+    // TODO: より良いUI通知システムを実装する（トーストやモーダル）
+    console.error('Error:', message);
     alert('エラー: ' + message);
 }
 
@@ -435,6 +445,8 @@ function showError(message) {
  * 成功メッセージを表示
  */
 function showSuccess(message) {
+    // TODO: より良いUI通知システムを実装する（トーストやモーダル）
+    console.log('Success:', message);
     alert(message);
 }
 
@@ -453,4 +465,31 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * 画像パスの検証とサニタイズ
+ * uploadsディレクトリ内の画像のみを許可
+ */
+function sanitizeImagePath(path) {
+    if (!path) {
+        return null;
+    }
+    
+    // パスに危険な文字が含まれていないか確認
+    const dangerousChars = ['<', '>', '"', "'", '`', '\\', '\0'];
+    for (const char of dangerousChars) {
+        if (path.includes(char)) {
+            console.warn('Dangerous character detected in image path:', path);
+            return null;
+        }
+    }
+    
+    // uploadsディレクトリから始まることを確認
+    if (!path.startsWith('uploads/')) {
+        console.warn('Invalid image path (must start with uploads/):', path);
+        return null;
+    }
+    
+    return path;
 }

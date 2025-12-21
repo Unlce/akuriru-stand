@@ -76,7 +76,8 @@ try {
     $order['status_display'] = $statusNames[$order['status']] ?? $order['status'];
     
     // decorationsフィールドを追加（現在は空オブジェクト）
-    $order['decorations'] = new stdClass();
+    // JSONエンコード時にオブジェクトとして出力されるように空配列ではなくキャスト
+    $order['decorations'] = (object)[];
     
     // notesフィールドを追加（現在は空）
     $order['notes'] = '';
