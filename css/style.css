@@ -21,6 +21,13 @@
     box-sizing: border-box;
 }
 
+/* Mobile scrolling fix */
+html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
     line-height: 1.6;
@@ -836,6 +843,18 @@ body {
    Responsive Design
    ================================ */
 @media (max-width: 768px) {
+    /* Mobile scrolling fix */
+    html, body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .container, .main-content {
+        overflow: visible;
+    }
+
     .nav {
         flex-direction: column;
         gap: 0.5rem;
@@ -884,6 +903,14 @@ body {
 }
 
 @media (max-width: 480px) {
+    /* Mobile scrolling fix for small screens */
+    html, body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .hero-title {
         font-size: 1.5rem;
     }

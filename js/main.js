@@ -168,7 +168,10 @@ class ModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            // Only hide overflow on desktop to prevent mobile scrolling issues
+            if (window.innerWidth > 768) {
+                document.body.style.overflow = 'hidden';
+            }
             modal.setAttribute('aria-hidden', 'false');
             
             // Focus first input in modal
@@ -183,7 +186,8 @@ class ModalManager {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            // Reset body overflow, let CSS handle it
+            document.body.style.overflow = '';
             modal.setAttribute('aria-hidden', 'true');
         }
     }
@@ -194,7 +198,8 @@ class ModalManager {
             btn.addEventListener('click', function() {
                 const modal = this.closest('.modal');
                 modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
+                // Reset body overflow, let CSS handle it
+                document.body.style.overflow = '';
                 modal.setAttribute('aria-hidden', 'true');
             });
         });
@@ -204,7 +209,8 @@ class ModalManager {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.style.display = 'none';
-                    document.body.style.overflow = 'auto';
+                    // Reset body overflow, let CSS handle it
+                    document.body.style.overflow = '';
                     this.setAttribute('aria-hidden', 'true');
                 }
             });
@@ -216,12 +222,16 @@ class ModalManager {
                 document.querySelectorAll('.modal').forEach(modal => {
                     if (modal.style.display === 'flex') {
                         modal.style.display = 'none';
-                        document.body.style.overflow = 'auto';
+                        // Reset body overflow, let CSS handle it
+                        document.body.style.overflow = '';
                         modal.setAttribute('aria-hidden', 'true');
                     }
                 });
             }
         });
+
+        // Ensure body overflow is reset on page load
+        document.body.style.overflow = '';
     }
 }
 
