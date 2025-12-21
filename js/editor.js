@@ -905,11 +905,15 @@ class ImageEditor {
         // Activate/deactivate cropping tool
         if (this.croppingTool) {
             if (mode === 'cropping' && this.image) {
-                this.croppingTool.activate(this.getImageData());
+                const imageData = this.getImageData();
+                this.croppingTool.activate(imageData);
                 if (croppingPanel) croppingPanel.classList.add('active');
                 this.render();
             } else {
                 this.croppingTool.deactivate();
+                if (this.image) {
+                    this.render();
+                }
             }
         }
 
