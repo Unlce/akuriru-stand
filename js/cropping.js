@@ -296,20 +296,20 @@ class CroppingTool {
         // then we overlay the mask visualization
         if (!this.isActive) return;
         
-        // Draw semi-transparent overlay for non-selected areas
-        const imageData = this.maskCtx.getImageData(0, 0, this.maskCanvas.width, this.maskCanvas.height);
+        // Create overlay canvas
         const overlayCanvas = document.createElement('canvas');
         overlayCanvas.width = this.canvas.width;
         overlayCanvas.height = this.canvas.height;
         const overlayCtx = overlayCanvas.getContext('2d');
         
-        // Draw dark overlay on non-selected areas
+        // Draw dark overlay on ALL areas first
         overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         overlayCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
         
-        // Clear selected areas
+        // Clear selected areas using the mask
+        // Use destination-out to remove overlay where mask is white
         overlayCtx.globalCompositeOperation = 'destination-out';
-        overlayCtx.putImageData(imageData, 0, 0);
+        overlayCtx.drawImage(this.maskCanvas, 0, 0);
         overlayCtx.globalCompositeOperation = 'source-over';
         
         // Draw overlay on main canvas
