@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特定商取引法に基づく表記 | アクリルスタンド工房</title>
+    <meta name="description" content="アクリルスタンド工房の特定商取引法に基づく表記ページです。販売業者情報、連絡先、返品・交換条件などを掲載しています。">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .legal-page {
+            padding: 4rem 0;
+            min-height: 100vh;
+        }
+
+        .legal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .legal-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--color-text);
+        }
+
+        .legal-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .legal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .legal-section h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-text);
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--color-secondary);
+        }
+
+        .legal-section table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .legal-section table tr {
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .legal-section table tr:last-child {
+            border-bottom: none;
+        }
+
+        .legal-section table th {
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--color-text);
+            background: rgba(230, 230, 250, 0.3);
+            width: 30%;
+            vertical-align: top;
+        }
+
+        .legal-section table td {
+            padding: 1rem;
+            color: var(--color-text);
+            line-height: 1.8;
+        }
+
+        .legal-section p {
+            color: var(--color-text);
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-section ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0.5rem 0;
+        }
+
+        .legal-section ul li {
+            color: var(--color-text);
+            line-height: 1.8;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .legal-section ul li:before {
+            content: "•";
+            position: absolute;
+            left: 0.5rem;
+            color: var(--color-accent);
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        @media (max-width: 768px) {
+            .legal-content {
+                padding: 2rem 1rem;
+            }
+
+            .legal-title {
+                font-size: 1.5rem;
+            }
+
+            .legal-section h2 {
+                font-size: 1.2rem;
+            }
+
+            .legal-section table th,
+            .legal-section table td {
+                display: block;
+                width: 100%;
+                padding: 0.8rem;
+            }
+
+            .legal-section table th {
+                background: rgba(230, 230, 250, 0.5);
+                border-bottom: none;
+                padding-bottom: 0.5rem;
+            }
+
+            .legal-section table td {
+                padding-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>✨ アクリルスタンド工房</h1>
+                </div>
+                <nav class="nav">
+                    <a href="index.html#hero" class="nav-link">ホーム</a>
+                    <a href="index.html#how-to-use" class="nav-link">使い方</a>
+                    <a href="index.html#gallery" class="nav-link">ギャラリー</a>
+                    <a href="index.html#creator" class="nav-link">作成する</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Legal Content -->
+    <section class="legal-page">
+        <div class="container">
+            <div class="legal-content">
+                <h1 class="legal-title">特定商取引法に基づく表記</h1>
+
+                <!-- 販売業者情報 -->
+                <div class="legal-section">
+                    <h2>販売業者情報</h2>
+                    <table>
+                        <tr>
+                            <th>販売業者名</th>
+                            <td>Zyniqo株式会社</td>
+                        </tr>
+                        <tr>
+                            <th>代表者名</th>
+                            <td>Zhao Yuanjun</td>
+                        </tr>
+                        <tr>
+                            <th>所在地</th>
+                            <td>〒161-0031<br>東京都新宿区西落合1-14-11</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 連絡先 -->
+                <div class="legal-section">
+                    <h2>連絡先</h2>
+                    <table>
+                        <tr>
+                            <th>メールアドレス</th>
+                            <td>info@zyniqo.co.jp</td>
+                        </tr>
+                        <tr>
+                            <th>電話番号</th>
+                            <td>090-7704-5936</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 商品・価格について -->
+                <div class="legal-section">
+                    <h2>商品・価格について</h2>
+                    <table>
+                        <tr>
+                            <th>販売価格</th>
+                            <td>1,000円〜5,000円（税込）<br>
+                                <ul>
+                                    <li>カードサイズ: 1,000円</li>
+                                    <li>はがきサイズ: 2,000円</li>
+                                    <li>A5サイズ: 3,000円</li>
+                                    <li>A4サイズ: 5,000円</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>送料</th>
+                            <td>全国一律500円<br>
+                                ※ 8,000円以上のご注文で送料無料</td>
+                        </tr>
+                        <tr>
+                            <th>支払方法</th>
+                            <td>
+                                <ul>
+                                    <li>PayPay</li>
+                                    <li>銀行振込</li>
+                                    <li>クレジットカード</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>支払時期</th>
+                            <td>商品注文時にお支払いいただきます。</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 配送について -->
+                <div class="legal-section">
+                    <h2>配送について</h2>
+                    <table>
+                        <tr>
+                            <th>発送時期</th>
+                            <td>ご注文から7営業日以内に発送いたします。</td>
+                        </tr>
+                        <tr>
+                            <th>配送方法</th>
+                            <td>宅配便またはゆうパック</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 返品・交換について -->
+                <div class="legal-section">
+                    <h2>返品・交換について</h2>
+                    <table>
+                        <tr>
+                            <th>返品・交換の条件</th>
+                            <td>
+                                <p>オーダーメイド商品のため、原則として返品・交換はお受けできません。</p>
+                                <p>ただし、以下の場合に限り、商品到着後7日以内にご連絡いただければ交換対応いたします：</p>
+                                <ul>
+                                    <li>商品に不良がある場合</li>
+                                    <li>配送中の破損がある場合</li>
+                                    <li>ご注文内容と異なる商品が届いた場合</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>返品・交換の送料</th>
+                            <td>不良品・配送中の破損・誤配送の場合は、弊社が送料を負担いたします。</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="text-align: center;">
+                    <a href="index.html" class="back-link">トップページへ戻る</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>アクリルスタンド工房</h4>
+                    <p>オリジナルアクリルスタンドを簡単作成</p>
+                </div>
+                <div class="footer-section">
+                    <h4>サービス</h4>
+                    <ul>
+                        <li><a href="index.html#creator">アクリルスタンド作成</a></li>
+                        <li><a href="index.html#gallery">ギャラリー</a></li>
+                        <li><a href="index.html#how-to-use">使い方</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>お問い合わせ</h4>
+                    <p>Email: info@zyniqo.co.jp</p>
+                    <p>Tel: 090-7704-5936</p>
+                </div>
+                <div class="footer-section">
+                    <h4>法的情報</h4>
+                    <ul>
+                        <li><a href="tokushoho.html">特定商取引法に基づく表記</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Zyniqo株式会社. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
