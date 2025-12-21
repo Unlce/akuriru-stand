@@ -117,19 +117,70 @@ function createOrder() {
 
 /**
  * 注文状態を取得する (GET)
+ * 
+ * order_number が指定されている場合は単一の注文を返す
+ * 指定されていない場合は全注文一覧を返す（管理者向け）
  */
 function getOrderStatus() {
     // クエリパラメータから注文番号を取得
     $orderNumber = isset($_GET['order_number']) ? sanitizeInput($_GET['order_number']) : null;
     
-    if (!$orderNumber) {
-        sendErrorResponse('注文番号が指定されていません');
-    }
-    
     $pdo = getDbConnection();
     
-    // 注文情報を取得
-    $stmt = $pdo->prepare('
+    // 単一注文の取得
+    if ($orderNumber) {
+        // 注文情報を取得
+        $stmt = $pdo->prepare('
+            SELECT 
+                o.id,
+                o.order_number,
+                o.status,
+                o.created_at,
+                o.updated_at,
+                c.name as customer_name,
+                c.email as customer_email,
+                od.product_size,
+                od.quantity,
+                od.price,
+                p.payment_status,
+                p.amount as payment_amount
+            FROM orders o
+            INNER JOIN customers c ON o.customer_id = c.id
+            INNER JOIN order_details od ON o.id = od.order_id
+            LEFT JOIN payments p ON o.id = p.order_id
+            WHERE o.order_number = :order_number
+        ');
+        
+        $stmt->execute(['order_number' => $orderNumber]);
+        $order = $stmt->fetch();
+        
+        if (!$order) {
+            sendErrorResponse('注文が見つかりません', 404);
+        }
+        
+        sendJsonResponse([
+            'success' => true,
+            'order' => $order
+        ]);
+    }
+    
+    // 全注文一覧の取得（管理者向け）
+    // フィルタリングオプション
+    $status = isset($_GET['status']) ? sanitizeInput($_GET['status']) : null;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+    $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+    
+    // クエリ構築
+    $whereClause = '';
+    $params = [];
+    
+    if ($status && in_array($status, ['pending', 'processing', 'completed', 'cancelled'])) {
+        $whereClause = 'WHERE o.status = :status';
+        $params['status'] = $status;
+    }
+    
+    // 注文一覧を取得
+    $sql = "
         SELECT 
             o.id,
             o.order_number,
@@ -138,28 +189,47 @@ function getOrderStatus() {
             o.updated_at,
             c.name as customer_name,
             c.email as customer_email,
-            od.product_size,
+            od.product_size as size,
+            od.base_design as base_type,
             od.quantity,
             od.price,
+            od.image_path,
             p.payment_status,
-            p.amount as payment_amount
+            p.amount as total_price
         FROM orders o
         INNER JOIN customers c ON o.customer_id = c.id
         INNER JOIN order_details od ON o.id = od.order_id
         LEFT JOIN payments p ON o.id = p.order_id
-        WHERE o.order_number = :order_number
-    ');
+        {$whereClause}
+        ORDER BY o.created_at DESC
+        LIMIT :limit OFFSET :offset
+    ";
     
-    $stmt->execute(['order_number' => $orderNumber]);
-    $order = $stmt->fetch();
-    
-    if (!$order) {
-        sendErrorResponse('注文が見つかりません', 404);
+    $stmt = $pdo->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(":{$key}", $value);
     }
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    $orders = $stmt->fetchAll();
+    
+    // 総件数を取得
+    $countSql = "SELECT COUNT(*) as total FROM orders o {$whereClause}";
+    $countStmt = $pdo->prepare($countSql);
+    foreach ($params as $key => $value) {
+        $countStmt->bindValue(":{$key}", $value);
+    }
+    $countStmt->execute();
+    $total = $countStmt->fetch()['total'];
     
     sendJsonResponse([
         'success' => true,
-        'order' => $order
+        'orders' => $orders,
+        'total' => (int)$total,
+        'limit' => $limit,
+        'offset' => $offset
     ]);
 }
 

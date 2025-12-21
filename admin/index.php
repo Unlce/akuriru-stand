@@ -98,215 +98,7 @@ if ($isLoggedIn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 - アクリルスタンド工房</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            background: #fff;
-            padding: 20px;
-            margin-bottom: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            color: #6B46C1;
-            font-size: 24px;
-        }
-        
-        .login-container {
-            max-width: 400px;
-            margin: 100px auto;
-            background: #fff;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .login-container h2 {
-            margin-bottom: 20px;
-            color: #6B46C1;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .btn {
-            background: #6B46C1;
-            color: #fff;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn:hover {
-            background: #5a3aa0;
-        }
-        
-        .btn-secondary {
-            background: #666;
-        }
-        
-        .btn-secondary:hover {
-            background: #555;
-        }
-        
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .stat-card h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #6B46C1;
-        }
-        
-        .table-container {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
-        th {
-            background: #f9f9f9;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        tr:hover {
-            background: #f9f9f9;
-        }
-        
-        .status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-processing {
-            background: #cce5ff;
-            color: #004085;
-        }
-        
-        .status-completed {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 20px;
-        }
-        
-        .pagination a {
-            padding: 8px 12px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-decoration: none;
-            color: #333;
-        }
-        
-        .pagination a.active {
-            background: #6B46C1;
-            color: #fff;
-            border-color: #6B46C1;
-        }
-        
-        .pagination a:hover:not(.active) {
-            background: #f5f5f5;
-        }
-    </style>
+    <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
     <?php if (!$isLoggedIn): ?>
@@ -343,7 +135,7 @@ if ($isLoggedIn) {
                 <div class="stats">
                     <div class="stat-card">
                         <h3>総注文数</h3>
-                        <div class="number"><?php echo number_format($totalOrders); ?></div>
+                        <div class="number" id="totalOrders"><?php echo number_format($totalOrders); ?></div>
                     </div>
                     <div class="stat-card">
                         <h3>現在のページ</h3>
@@ -351,78 +143,54 @@ if ($isLoggedIn) {
                     </div>
                 </div>
                 
+                <!-- フィルター -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="searchInput">🔍 検索</label>
+                        <input type="text" id="searchInput" placeholder="注文番号、顧客名、メールアドレスで検索...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">ステータス</label>
+                        <select id="statusFilter">
+                            <option value="">すべて</option>
+                            <option value="pending">新規</option>
+                            <option value="processing">処理中</option>
+                            <option value="completed">完了</option>
+                            <option value="cancelled">キャンセル</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- ローディング -->
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">読み込み中...</p>
+                </div>
+                
                 <!-- 注文一覧テーブル -->
                 <div class="table-container">
-                    <table>
+                    <table id="ordersTable">
                         <thead>
                             <tr>
                                 <th>注文番号</th>
+                                <th>日時</th>
                                 <th>顧客名</th>
-                                <th>メール</th>
-                                <th>電話番号</th>
+                                <th>商品画像</th>
                                 <th>サイズ</th>
-                                <th>数量</th>
+                                <th>台座</th>
                                 <th>金額</th>
-                                <th>注文状態</th>
-                                <th>支払い状態</th>
-                                <th>注文日時</th>
+                                <th>ステータス</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($orders)): ?>
-                                <tr>
-                                    <td colspan="10" style="text-align: center; padding: 40px;">
-                                        まだ注文がありません
-                                    </td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($orders as $order): ?>
-                                    <?php
-                                    $sizeNames = [
-                                        'card' => 'カード',
-                                        'postcard' => 'はがき',
-                                        'a5' => 'A5',
-                                        'a4' => 'A4'
-                                    ];
-                                    ?>
-                                    <tr>
-                                        <td><strong><?php echo htmlspecialchars($order['order_number']); ?></strong></td>
-                                        <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($order['customer_email']); ?></td>
-                                        <td><?php echo htmlspecialchars($order['customer_phone']); ?></td>
-                                        <td><?php echo $sizeNames[$order['product_size']] ?? $order['product_size']; ?></td>
-                                        <td><?php echo number_format($order['quantity']); ?>個</td>
-                                        <td>¥<?php echo number_format($order['payment_amount']); ?></td>
-                                        <td>
-                                            <span class="status status-<?php echo $order['status']; ?>">
-                                                <?php
-                                                $statusNames = [
-                                                    'pending' => '保留中',
-                                                    'processing' => '処理中',
-                                                    'completed' => '完了',
-                                                    'cancelled' => 'キャンセル'
-                                                ];
-                                                echo $statusNames[$order['status']] ?? $order['status'];
-                                                ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="status status-<?php echo $order['payment_status']; ?>">
-                                                <?php
-                                                $paymentStatusNames = [
-                                                    'pending' => '未払い',
-                                                    'completed' => '支払済',
-                                                    'failed' => '失敗',
-                                                    'refunded' => '返金済'
-                                                ];
-                                                echo $paymentStatusNames[$order['payment_status']] ?? $order['payment_status'];
-                                                ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo date('Y/m/d H:i', strtotime($order['created_at'])); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <!-- Table rows will be loaded dynamically via JavaScript -->
+                            <tr>
+                                <td colspan="9" class="empty-state">
+                                    <div class="empty-state-icon">⏳</div>
+                                    <div class="empty-state-text">読み込み中...</div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                     
@@ -447,6 +215,22 @@ if ($isLoggedIn) {
                 </div>
             <?php endif; ?>
         </div>
+        
+        <!-- Order Detail Modal -->
+        <div id="orderDetailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📋 注文詳細</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div id="orderDetailContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- JavaScript -->
+        <script src="js/admin.js"></script>
     <?php endif; ?>
 </body>
 </html>
