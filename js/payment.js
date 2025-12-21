@@ -5,12 +5,32 @@ class OrderManager {
         this.selectedSize = 'card';
         this.selectedPrice = 1000;
         this.quantity = 1;
+        this.sessionStartTime = Date.now();
+        this.pagesViewed = 1;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
         this.updateTotalPrice();
+        this.initSessionTracking();
+    }
+
+    /**
+     * セッション追跡を初期化
+     */
+    initSessionTracking() {
+        // ページビューをカウント
+        const viewCount = parseInt(sessionStorage.getItem('pagesViewed') || '0');
+        this.pagesViewed = viewCount + 1;
+        sessionStorage.setItem('pagesViewed', this.pagesViewed.toString());
+
+        // セッション開始時刻を保存
+        if (!sessionStorage.getItem('sessionStartTime')) {
+            sessionStorage.setItem('sessionStartTime', this.sessionStartTime.toString());
+        } else {
+            this.sessionStartTime = parseInt(sessionStorage.getItem('sessionStartTime'));
+        }
     }
 
     setupEventListeners() {
@@ -103,7 +123,7 @@ class OrderManager {
         window.ModalManager.show('payment-modal');
     }
 
-    submitOrder() {
+    async submitOrder() {
         // Get form data
         const customerName = document.getElementById('customer-name').value;
         const customerEmail = document.getElementById('customer-email').value;
@@ -131,48 +151,231 @@ class OrderManager {
             return;
         }
 
-        // Create order object
-        const order = {
-            id: `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-            imageData: window.imageEditor.getImageData(),
-            size: this.selectedSize,
-            baseType: window.imageEditor.getBaseType(),
-            quantity: this.quantity,
-            price: this.selectedPrice,
-            totalPrice: this.selectedPrice * this.quantity,
-            customer: {
-                name: customerName,
-                email: customerEmail,
-                phone: customerPhone,
-                address: customerAddress
-            },
-            createdAt: new Date().toISOString(),
-            status: 'pending'
-        };
-
-        // Save order (in real app, this would be sent to server)
-        this.saveOrder(order);
-
-        // Add to gallery
-        if (window.galleryManager) {
-            window.galleryManager.addItem({
-                imageData: order.imageData,
-                size: order.size,
-                baseType: order.baseType
-            });
+        // Disable submit button
+        const submitBtn = document.querySelector('#payment-form button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '処理中...';
         }
 
-        // Hide payment modal
-        window.ModalManager.hide('payment-modal');
+        try {
+            // Upload image first
+            let imagePath = null;
+            const imageData = window.imageEditor.getImageData();
+            
+            if (imageData) {
+                imagePath = await this.uploadImage(imageData);
+            }
 
-        // Show success modal
-        window.ModalManager.show('success-modal');
+            // Collect analytics data
+            const analytics = this.collectAnalyticsData();
 
-        // In a real application, this would redirect to PayPay payment page
-        console.log('Order submitted:', order);
+            // Create order object for API
+            const orderData = {
+                customer: {
+                    name: customerName,
+                    email: customerEmail,
+                    phone: customerPhone,
+                    address: customerAddress
+                },
+                order_details: {
+                    product_size: this.selectedSize,
+                    base_design: window.imageEditor.getBaseType(),
+                    quantity: this.quantity,
+                    price: this.selectedPrice,
+                    image_path: imagePath,
+                    image_data: imageData
+                },
+                payment: {
+                    payment_status: 'pending',
+                    amount: this.selectedPrice * this.quantity
+                },
+                analytics: analytics
+            };
+
+            // Submit order to backend API
+            const result = await this.submitToBackend(orderData);
+
+            if (result.success) {
+                // Add to gallery
+                if (window.galleryManager) {
+                    window.galleryManager.addItem({
+                        imageData: imageData,
+                        size: this.selectedSize,
+                        baseType: window.imageEditor.getBaseType()
+                    });
+                }
+
+                // Hide payment modal
+                window.ModalManager.hide('payment-modal');
+
+                // Show success modal
+                window.ModalManager.show('success-modal');
+
+                console.log('Order submitted successfully:', result);
+            } else {
+                throw new Error(result.error || '注文の送信に失敗しました');
+            }
+
+        } catch (error) {
+            console.error('Order submission error:', error);
+            
+            // Fallback to localStorage if API fails
+            const fallbackOrder = {
+                id: `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+                imageData: window.imageEditor.getImageData(),
+                size: this.selectedSize,
+                baseType: window.imageEditor.getBaseType(),
+                quantity: this.quantity,
+                price: this.selectedPrice,
+                totalPrice: this.selectedPrice * this.quantity,
+                customer: {
+                    name: customerName,
+                    email: customerEmail,
+                    phone: customerPhone,
+                    address: customerAddress
+                },
+                createdAt: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            this.saveToLocalStorage(fallbackOrder);
+            
+            // Add to gallery
+            if (window.galleryManager) {
+                window.galleryManager.addItem({
+                    imageData: fallbackOrder.imageData,
+                    size: fallbackOrder.size,
+                    baseType: fallbackOrder.baseType
+                });
+            }
+
+            // Hide payment modal
+            window.ModalManager.hide('payment-modal');
+
+            // Show success modal
+            window.ModalManager.show('success-modal');
+
+            alert('注文を保存しました（オフラインモード）。後ほど管理者が確認します。');
+        } finally {
+            // Re-enable submit button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '注文を確定する';
+            }
+        }
     }
 
-    saveOrder(order) {
+    /**
+     * 画像をサーバーにアップロード
+     * @param {string} imageData Base64 画像データ
+     * @returns {Promise<string|null>} アップロードされた画像のパス
+     */
+    async uploadImage(imageData) {
+        try {
+            // Base64 を Blob に変換
+            const blob = await this.base64ToBlob(imageData);
+            
+            // FormData を作成
+            const formData = new FormData();
+            formData.append('image', blob, 'design.png');
+
+            // API にアップロード
+            const response = await fetch('api/upload.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                return result.file.path;
+            } else {
+                throw new Error(result.error || 'アップロードに失敗しました');
+            }
+        } catch (error) {
+            console.error('Image upload error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Base64 を Blob に変換
+     * @param {string} base64 Base64 文字列
+     * @returns {Promise<Blob>} Blob オブジェクト
+     */
+    async base64ToBlob(base64) {
+        const response = await fetch(base64);
+        return await response.blob();
+    }
+
+    /**
+     * 分析データを収集
+     * @returns {Object} 分析データ
+     */
+    collectAnalyticsData() {
+        // デバイスタイプの判定
+        const deviceType = this.getDeviceType();
+
+        // ブラウザ情報の取得
+        const browser = navigator.userAgent;
+
+        // セッション時間の計算（秒）
+        const sessionDuration = Math.floor((Date.now() - this.sessionStartTime) / 1000);
+
+        // リファラの取得
+        const referrer = document.referrer || 'direct';
+
+        return {
+            device_type: deviceType,
+            browser: browser,
+            session_duration: sessionDuration,
+            referrer: referrer,
+            pages_viewed: this.pagesViewed
+        };
+    }
+
+    /**
+     * デバイスタイプを判定
+     * @returns {string} デバイスタイプ (mobile, tablet, desktop)
+     */
+    getDeviceType() {
+        const width = window.innerWidth;
+        if (width < 768) {
+            return 'mobile';
+        } else if (width < 1280) {
+            return 'tablet';
+        } else {
+            return 'desktop';
+        }
+    }
+
+    /**
+     * バックエンドAPIに注文を送信
+     * @param {Object} orderData 注文データ
+     * @returns {Promise<Object>} API レスポンス
+     */
+    async submitToBackend(orderData) {
+        const response = await fetch('api/orders.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
+     * LocalStorage に保存（バックエンドが利用できない場合の予備手段）
+     * @param {Object} order 注文オブジェクト
+     */
+    saveToLocalStorage(order) {
         const storageKey = 'acrylicStandOrders';
         const orders = this.getOrders();
         orders.push(order);

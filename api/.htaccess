@@ -1,0 +1,34 @@
+# Security settings for API directory
+# Apache 2.4+
+
+# Disable directory listing
+Options -Indexes
+
+# Protect PHP files from direct access (except API endpoints)
+<FilesMatch "^config\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Enable error display for development (disable in production)
+# php_flag display_errors off
+# php_flag display_startup_errors off
+
+# Set maximum upload size (adjust as needed)
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+
+# Set execution time limit
+php_value max_execution_time 60
+
+# Protect against clickjacking
+Header always append X-Frame-Options SAMEORIGIN
+
+# Protect against XSS
+Header set X-XSS-Protection "1; mode=block"
+
+# Prevent MIME type sniffing
+Header set X-Content-Type-Options nosniff
+
+# Set Content Security Policy
+Header set Content-Security-Policy "default-src 'self'"

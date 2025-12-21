@@ -3,7 +3,7 @@
 // Configuration constants
 const EDITOR_CONFIG = {
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-    ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
+    ACCEPTED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     MAX_CANVAS_WIDTH: 400,
     MAX_CANVAS_HEIGHT: 500
 };
@@ -16,6 +16,7 @@ class ImageEditor {
         this.rotation = 0;
         this.scale = 1;
         this.baseType = 'default';
+        this.originalFile = null;
         this.init();
     }
 
@@ -140,7 +141,7 @@ class ImageEditor {
 
         // Validate file type
         if (!EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
-            alert('JPG、PNG、GIF形式の画像ファイルを選択してください。');
+            alert('JPG、PNG、GIF、WEBP形式の画像ファイルを選択してください。');
             return;
         }
 
@@ -151,6 +152,7 @@ class ImageEditor {
                 this.image = img;
                 this.rotation = 0;
                 this.scale = 1;
+                this.originalFile = file;
                 
                 // Reset slider
                 const scaleSlider = document.getElementById('scale-slider');
@@ -296,6 +298,14 @@ class ImageEditor {
 
     getBaseType() {
         return this.baseType;
+    }
+
+    /**
+     * 元のファイルを取得（アップロード用）
+     * @returns {File|null} 元のファイル
+     */
+    getOriginalFile() {
+        return this.originalFile || null;
     }
 }
 
