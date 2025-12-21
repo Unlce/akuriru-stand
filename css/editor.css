@@ -1,0 +1,548 @@
+/* Editor Styles for Cropping and Base Editing */
+
+/* ================================
+   Tool Panel Common Styles
+   ================================ */
+.tool-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-md);
+}
+
+.tool-panel h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tool-panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* ================================
+   Cropping Tools Panel
+   ================================ */
+.cropping-panel {
+    display: none;
+}
+
+.cropping-panel.active {
+    display: block;
+}
+
+.cropping-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.crop-tool-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.75rem 1rem;
+    background: var(--color-white);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.crop-tool-btn:hover {
+    background: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.crop-tool-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-text);
+}
+
+.crop-tool-btn .tool-icon {
+    font-size: 1.5rem;
+}
+
+.crop-tool-btn .tool-label {
+    font-size: 0.8rem;
+}
+
+.brush-size-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.brush-size-control label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.brush-size-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-primary);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.brush-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.brush-size-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.crop-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.crop-action-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.crop-action-btn.primary {
+    background: var(--color-accent);
+    color: var(--color-text);
+}
+
+.crop-action-btn.secondary {
+    background: var(--color-secondary);
+    color: var(--color-text);
+}
+
+.crop-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.crop-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ================================
+   Base Editor Panel
+   ================================ */
+.base-editor-panel {
+    display: none;
+}
+
+.base-editor-panel.active {
+    display: block;
+}
+
+.base-shapes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.75rem;
+}
+
+.base-shape-btn {
+    aspect-ratio: 1;
+    padding: 0.75rem;
+    background: var(--color-white);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.8rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.base-shape-btn:hover {
+    background: var(--color-primary);
+    transform: scale(1.05);
+}
+
+.base-shape-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-text);
+}
+
+.base-shape-btn .shape-icon {
+    font-size: 2rem;
+}
+
+.base-shape-btn .shape-label {
+    font-size: 0.7rem;
+    margin-top: 0.25rem;
+}
+
+.base-color-control,
+.base-gradient-control,
+.base-opacity-control,
+.base-size-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.base-color-control label,
+.base-gradient-control label,
+.base-opacity-control label,
+.base-size-control label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.color-picker-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.color-picker {
+    width: 60px;
+    height: 40px;
+    border: 2px solid var(--color-primary);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.color-value {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+    font-family: monospace;
+}
+
+.gradient-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gradient-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.gradient-colors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.slider-control {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-primary);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider-control::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-control::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ================================
+   Base Text Controls
+   ================================ */
+.base-text-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.base-text-input,
+.base-font-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--color-primary);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: var(--color-white);
+}
+
+.base-text-input:focus,
+.base-font-select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.base-text-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.base-text-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.base-text-btn.primary {
+    background: var(--color-accent);
+    color: var(--color-text);
+}
+
+.base-text-btn.secondary {
+    background: var(--color-secondary);
+    color: var(--color-text);
+}
+
+.base-text-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ================================
+   Editor Mode Tabs
+   ================================ */
+.editor-mode-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.5rem;
+}
+
+.editor-mode-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.editor-mode-tab:hover {
+    background: var(--color-primary);
+}
+
+.editor-mode-tab.active {
+    background: var(--color-accent);
+    color: var(--color-text);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+@media (max-width: 768px) {
+    .tool-panel {
+        padding: 1rem;
+    }
+    
+    .cropping-tools {
+        gap: 0.5rem;
+    }
+    
+    .crop-tool-btn {
+        min-width: 80px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .crop-tool-btn .tool-icon {
+        font-size: 1.2rem;
+    }
+    
+    .base-shapes {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .base-shape-btn {
+        padding: 0.5rem;
+        font-size: 1.5rem;
+    }
+    
+    .base-shape-btn .shape-icon {
+        font-size: 1.6rem;
+    }
+    
+    .editor-mode-tabs {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .editor-mode-tab {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .tool-panel {
+        padding: 0.75rem;
+    }
+    
+    .tool-panel h3 {
+        font-size: 1rem;
+    }
+    
+    .crop-tool-btn {
+        min-width: 70px;
+        padding: 0.4rem 0.5rem;
+    }
+    
+    .crop-tool-btn .tool-icon {
+        font-size: 1rem;
+    }
+    
+    .crop-tool-btn .tool-label {
+        font-size: 0.7rem;
+    }
+    
+    .base-shapes {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .base-shape-btn {
+        padding: 0.4rem;
+    }
+    
+    .base-shape-btn .shape-icon {
+        font-size: 1.4rem;
+    }
+    
+    .base-shape-btn .shape-label {
+        font-size: 0.65rem;
+    }
+}
+
+/* ================================
+   Tooltips
+   ================================ */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 140px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 0.5rem;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -70px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.85rem;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ================================
+   Animation
+   ================================ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tool-panel {
+    animation: fadeIn 0.3s ease;
+}

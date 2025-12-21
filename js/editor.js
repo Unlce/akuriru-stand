@@ -18,6 +18,9 @@ class ImageEditor {
         this.baseType = 'default';
         this.originalFile = null;
         this.decorationManager = null;
+        this.croppingTool = null;
+        this.baseEditor = null;
+        this.currentMode = 'basic'; // 'basic', 'cropping', 'base'
         this.init();
     }
 
@@ -29,6 +32,9 @@ class ImageEditor {
 
         this.setupEventListeners();
         this.initDecorations();
+        this.initCroppingTool();
+        this.initBaseEditor();
+        this.initEditorModes();
     }
 
     setupEventListeners() {
@@ -224,6 +230,11 @@ class ImageEditor {
 
         // Restore context state
         this.ctx.restore();
+
+        // If cropping mode is active, render cropping overlay
+        if (this.croppingTool && this.croppingTool.isActive) {
+            this.croppingTool.renderPreview();
+        }
     }
 
     updateBasePreview() {
@@ -583,6 +594,338 @@ class ImageEditor {
             });
 
         return finalCanvas.toDataURL('image/png');
+    }
+
+    /**
+     * Initialize cropping tool
+     */
+    initCroppingTool() {
+        const initCropping = () => {
+            if (window.CroppingTool && this.canvas) {
+                this.croppingTool = new CroppingTool(this.canvas, () => {
+                    this.render();
+                });
+                this.setupCroppingControls();
+            } else {
+                setTimeout(initCropping, 100);
+            }
+        };
+        initCropping();
+    }
+
+    /**
+     * Setup cropping tool controls
+     */
+    setupCroppingControls() {
+        // Tool selection
+        const toolButtons = document.querySelectorAll('.crop-tool-btn');
+        toolButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toolButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const tool = btn.dataset.tool;
+                if (this.croppingTool) {
+                    this.croppingTool.setTool(tool);
+                    
+                    // Show/hide polygon complete button
+                    const completeBtn = document.getElementById('crop-complete-polygon-btn');
+                    if (completeBtn) {
+                        completeBtn.style.display = tool === 'polygon' ? 'block' : 'none';
+                    }
+                }
+            });
+        });
+
+        // Brush size control
+        const brushSizeSlider = document.getElementById('brush-size-slider');
+        const brushSizeValue = document.getElementById('brush-size-value');
+        if (brushSizeSlider && brushSizeValue) {
+            brushSizeSlider.addEventListener('input', (e) => {
+                const size = parseInt(e.target.value);
+                brushSizeValue.textContent = size;
+                if (this.croppingTool) {
+                    this.croppingTool.setBrushSize(size);
+                }
+            });
+        }
+
+        // Undo/Redo buttons
+        const undoBtn = document.getElementById('crop-undo-btn');
+        const redoBtn = document.getElementById('crop-redo-btn');
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                if (this.croppingTool) {
+                    this.croppingTool.undo();
+                    this.render();
+                }
+            });
+        }
+        if (redoBtn) {
+            redoBtn.addEventListener('click', () => {
+                if (this.croppingTool) {
+                    this.croppingTool.redo();
+                    this.render();
+                }
+            });
+        }
+
+        // Complete polygon button
+        const completePolygonBtn = document.getElementById('crop-complete-polygon-btn');
+        if (completePolygonBtn) {
+            completePolygonBtn.addEventListener('click', () => {
+                if (this.croppingTool) {
+                    this.croppingTool.completePolygon();
+                }
+            });
+        }
+
+        // Reset button
+        const resetBtn = document.getElementById('crop-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (this.croppingTool) {
+                    this.croppingTool.reset();
+                    this.render();
+                }
+            });
+        }
+
+        // Apply crop button
+        const applyBtn = document.getElementById('crop-apply-btn');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', async () => {
+                if (this.croppingTool && this.croppingTool.isActive) {
+                    const croppedImage = await this.croppingTool.applyCrop();
+                    if (croppedImage) {
+                        // Load the cropped image
+                        const img = new Image();
+                        img.onload = () => {
+                            this.image = img;
+                            this.croppingTool.deactivate();
+                            this.switchMode('basic');
+                            this.render();
+                        };
+                        img.src = croppedImage;
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Initialize base editor
+     */
+    initBaseEditor() {
+        const initBase = () => {
+            if (window.BaseEditor) {
+                this.baseEditor = new BaseEditor('.stand-base');
+                this.setupBaseEditorControls();
+            } else {
+                setTimeout(initBase, 100);
+            }
+        };
+        initBase();
+    }
+
+    /**
+     * Setup base editor controls
+     */
+    setupBaseEditorControls() {
+        // Shape selection
+        const shapeButtons = document.querySelectorAll('.base-shape-btn');
+        shapeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                shapeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const shape = btn.dataset.shape;
+                if (this.baseEditor) {
+                    this.baseEditor.setShape(shape);
+                }
+            });
+        });
+
+        // Color picker
+        const colorPicker = document.getElementById('base-color-picker');
+        const colorValue = document.getElementById('base-color-value');
+        if (colorPicker && colorValue) {
+            colorPicker.addEventListener('input', (e) => {
+                const color = e.target.value;
+                colorValue.textContent = color;
+                if (this.baseEditor) {
+                    this.baseEditor.setColor(color);
+                }
+            });
+        }
+
+        // Gradient toggle
+        const gradientToggle = document.getElementById('base-gradient-toggle');
+        const gradientColors = document.getElementById('gradient-colors');
+        if (gradientToggle && gradientColors) {
+            gradientToggle.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                gradientColors.style.display = enabled ? 'grid' : 'none';
+                if (this.baseEditor) {
+                    this.baseEditor.setGradientEnabled(enabled);
+                }
+            });
+        }
+
+        // Gradient colors
+        const gradientColor1 = document.getElementById('gradient-color1');
+        const gradientColor2 = document.getElementById('gradient-color2');
+        if (gradientColor1 && gradientColor2) {
+            const updateGradient = () => {
+                if (this.baseEditor) {
+                    this.baseEditor.setGradientColors(
+                        gradientColor1.value,
+                        gradientColor2.value
+                    );
+                }
+            };
+            gradientColor1.addEventListener('input', updateGradient);
+            gradientColor2.addEventListener('input', updateGradient);
+        }
+
+        // Opacity slider
+        const opacitySlider = document.getElementById('base-opacity-slider');
+        const opacityValue = document.getElementById('base-opacity-value');
+        if (opacitySlider && opacityValue) {
+            opacitySlider.addEventListener('input', (e) => {
+                const opacity = parseInt(e.target.value) / 100;
+                opacityValue.textContent = e.target.value;
+                if (this.baseEditor) {
+                    this.baseEditor.setOpacity(opacity);
+                }
+            });
+        }
+
+        // Size slider
+        const sizeSlider = document.getElementById('base-size-slider');
+        const sizeValue = document.getElementById('base-size-value');
+        if (sizeSlider && sizeValue) {
+            sizeSlider.addEventListener('input', (e) => {
+                const size = parseInt(e.target.value);
+                sizeValue.textContent = size;
+                if (this.baseEditor) {
+                    this.baseEditor.setSize(size);
+                }
+            });
+        }
+
+        // Text controls
+        const textInput = document.getElementById('base-text-input');
+        const fontSelect = document.getElementById('base-font-select');
+        const textColor = document.getElementById('base-text-color');
+        const textSizeSlider = document.getElementById('base-text-size-slider');
+        const textSizeValue = document.getElementById('base-text-size-value');
+        const addBtn = document.getElementById('base-text-add-btn');
+        const removeBtn = document.getElementById('base-text-remove-btn');
+
+        if (textSizeSlider && textSizeValue) {
+            textSizeSlider.addEventListener('input', (e) => {
+                textSizeValue.textContent = e.target.value;
+            });
+        }
+
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                const text = textInput ? textInput.value : '';
+                if (text.trim() && this.baseEditor) {
+                    const fontSize = textSizeSlider ? parseInt(textSizeSlider.value) : 16;
+                    const fontFamily = fontSelect ? fontSelect.value : 'sans-serif';
+                    const color = textColor ? textColor.value : '#000000';
+                    
+                    this.baseEditor.addText(text, {
+                        fontSize,
+                        fontFamily,
+                        color
+                    });
+                    
+                    if (textInput) textInput.value = '';
+                } else if (!text.trim()) {
+                    alert('テキストを入力してください');
+                }
+            });
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                if (this.baseEditor && this.baseEditor.selectedTextId) {
+                    this.baseEditor.removeText(this.baseEditor.selectedTextId);
+                } else {
+                    alert('削除するテキストを選択してください');
+                }
+            });
+        }
+
+        // Setup text dragging
+        if (this.baseEditor) {
+            this.baseEditor.setupTextDragging();
+        }
+    }
+
+    /**
+     * Initialize editor mode switching
+     */
+    initEditorModes() {
+        const modeButtons = document.querySelectorAll('.editor-mode-tab');
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                this.switchMode(mode);
+            });
+        });
+    }
+
+    /**
+     * Switch between editor modes
+     */
+    switchMode(mode) {
+        this.currentMode = mode;
+
+        // Update tab active states
+        const modeButtons = document.querySelectorAll('.editor-mode-tab');
+        modeButtons.forEach(btn => {
+            if (btn.dataset.mode === mode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Show/hide panels
+        const basicPanel = document.getElementById('basic-editing-panel');
+        const croppingPanel = document.getElementById('cropping-panel');
+        const basePanel = document.getElementById('base-editor-panel');
+
+        if (basicPanel) basicPanel.classList.remove('active');
+        if (croppingPanel) croppingPanel.classList.remove('active');
+        if (basePanel) basePanel.classList.remove('active');
+
+        // Activate/deactivate cropping tool
+        if (this.croppingTool) {
+            if (mode === 'cropping' && this.image) {
+                this.croppingTool.activate(this.getImageData());
+                if (croppingPanel) croppingPanel.classList.add('active');
+                this.render();
+            } else {
+                this.croppingTool.deactivate();
+            }
+        }
+
+        // Show appropriate panel
+        if (mode === 'basic' && basicPanel) {
+            basicPanel.classList.add('active');
+        } else if (mode === 'cropping' && croppingPanel) {
+            if (!this.image) {
+                alert('画像をアップロードしてから切り抜きツールを使用してください');
+                this.switchMode('basic');
+                return;
+            }
+            croppingPanel.classList.add('active');
+        } else if (mode === 'base' && basePanel) {
+            basePanel.classList.add('active');
+        }
     }
 }
 
