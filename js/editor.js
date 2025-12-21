@@ -17,6 +17,7 @@ class ImageEditor {
         this.scale = 1;
         this.baseType = 'default';
         this.originalFile = null;
+        this.decorationManager = null;
         this.init();
     }
 
@@ -27,6 +28,7 @@ class ImageEditor {
         }
 
         this.setupEventListeners();
+        this.initDecorations();
     }
 
     setupEventListeners() {
@@ -306,6 +308,281 @@ class ImageEditor {
      */
     getOriginalFile() {
         return this.originalFile || null;
+    }
+
+    /**
+     * デコレーション機能の初期化
+     */
+    initDecorations() {
+        // DecorationManagerが利用可能になるまで待つ
+        const initInterval = setInterval(() => {
+            if (window.DecorationManager) {
+                clearInterval(initInterval);
+                this.setupDecorationSystem();
+            }
+        }, 100);
+    }
+
+    /**
+     * デコレーションシステムのセットアップ
+     */
+    setupDecorationSystem() {
+        // プレビューエリアの親要素を取得
+        const previewArea = document.querySelector('.acrylic-stand-preview');
+        if (!previewArea) return;
+
+        // DecorationManagerを初期化
+        this.decorationManager = new DecorationManager('.acrylic-stand-preview');
+
+        // タブ切り替え
+        const tabs = document.querySelectorAll('.decoration-tab[data-tab]');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                this.switchDecorationTab(tabName, tab);
+            });
+        });
+
+        // カテゴリタブ
+        const categoryTabs = document.querySelectorAll('.decoration-tab[data-category]');
+        categoryTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const category = tab.dataset.category;
+                this.showMotifCategory(category, tab);
+            });
+        });
+
+        // 初期カテゴリを表示
+        this.showMotifCategory('hearts');
+
+        // テキストコントロール
+        this.setupTextControls();
+
+        // レイヤーコントロール
+        this.setupLayerControls();
+    }
+
+    /**
+     * デコレーションタブを切り替え
+     */
+    switchDecorationTab(tabName, tabButton) {
+        // タブボタンのアクティブ状態を更新
+        const allTabs = document.querySelectorAll('.decoration-tab[data-tab]');
+        allTabs.forEach(t => t.classList.remove('active'));
+        tabButton.classList.add('active');
+
+        // タブコンテンツを切り替え
+        const allContents = document.querySelectorAll('.tab-content');
+        allContents.forEach(c => c.classList.remove('active'));
+
+        const targetContent = document.getElementById(`${tabName}-tab`);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+    }
+
+    /**
+     * モチーフカテゴリを表示
+     */
+    showMotifCategory(category, tabButton = null) {
+        if (!this.decorationManager) return;
+
+        // カテゴリタブのアクティブ状態を更新
+        if (tabButton) {
+            const categoryTabs = document.querySelectorAll('.decoration-tab[data-category]');
+            categoryTabs.forEach(t => t.classList.remove('active'));
+            tabButton.classList.add('active');
+        }
+
+        const catalog = this.decorationManager.getMotifCatalog();
+        const motifs = catalog[category] || [];
+        const grid = document.getElementById('motif-grid');
+        
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        motifs.forEach(motif => {
+            const item = document.createElement('div');
+            item.className = 'motif-item';
+            
+            const img = document.createElement('img');
+            img.src = `assets/decorations/${category}/${motif.file}`;
+            img.alt = motif.name;
+            
+            const span = document.createElement('span');
+            span.textContent = motif.name;
+            
+            item.appendChild(img);
+            item.appendChild(span);
+            
+            item.addEventListener('click', () => {
+                this.decorationManager.addMotif(category, motif.file);
+            });
+            
+            grid.appendChild(item);
+        });
+    }
+
+    /**
+     * テキストコントロールのセットアップ
+     */
+    setupTextControls() {
+        const addBtn = document.getElementById('add-text-btn');
+        const updateBtn = document.getElementById('update-text-btn');
+        const fontSizeSlider = document.getElementById('font-size');
+        const fontSizeValue = document.getElementById('font-size-value');
+
+        // フォントサイズスライダー
+        if (fontSizeSlider && fontSizeValue) {
+            fontSizeSlider.addEventListener('input', (e) => {
+                fontSizeValue.textContent = e.target.value + 'px';
+            });
+        }
+
+        // テキスト追加
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                const text = document.getElementById('text-input').value;
+                const fontSize = parseInt(document.getElementById('font-size').value);
+                const fontFamily = document.getElementById('font-select').value;
+                const color = document.getElementById('text-color').value;
+
+                if (text.trim()) {
+                    this.decorationManager.addText(text, {
+                        fontSize,
+                        fontFamily,
+                        color
+                    });
+                } else {
+                    alert('テキストを入力してください');
+                }
+            });
+        }
+
+        // テキスト更新
+        if (updateBtn) {
+            updateBtn.addEventListener('click', () => {
+                if (!this.decorationManager.selectedDecoration) {
+                    alert('デコレーションを選択してください');
+                    return;
+                }
+
+                const selected = this.decorationManager.selectedDecoration;
+                if (selected.type !== 'text') {
+                    alert('テキストデコレーションを選択してください');
+                    return;
+                }
+
+                const text = document.getElementById('text-input').value;
+                const fontSize = parseInt(document.getElementById('font-size').value);
+                const fontFamily = document.getElementById('font-select').value;
+                const color = document.getElementById('text-color').value;
+
+                if (text.trim()) {
+                    this.decorationManager.updateText(selected.id, text);
+                    this.decorationManager.updateTextStyle(selected.id, {
+                        fontSize,
+                        fontFamily,
+                        color
+                    });
+                }
+            });
+        }
+    }
+
+    /**
+     * レイヤーコントロールのセットアップ
+     */
+    setupLayerControls() {
+        const bringToFrontBtn = document.getElementById('bring-to-front-btn');
+        const sendToBackBtn = document.getElementById('send-to-back-btn');
+        const clearBtn = document.getElementById('clear-decorations-btn');
+
+        if (bringToFrontBtn) {
+            bringToFrontBtn.addEventListener('click', () => {
+                if (!this.decorationManager.selectedDecoration) {
+                    alert('デコレーションを選択してください');
+                    return;
+                }
+                this.decorationManager.bringToFront(this.decorationManager.selectedDecoration.id);
+            });
+        }
+
+        if (sendToBackBtn) {
+            sendToBackBtn.addEventListener('click', () => {
+                if (!this.decorationManager.selectedDecoration) {
+                    alert('デコレーションを選択してください');
+                    return;
+                }
+                this.decorationManager.sendToBack(this.decorationManager.selectedDecoration.id);
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('すべてのデコレーションを削除しますか？')) {
+                    this.decorationManager.clearAll();
+                }
+            });
+        }
+    }
+
+    /**
+     * デコレーション付きで最終画像を取得
+     */
+    getFinalImageWithDecorations() {
+        if (!this.canvas || !this.decorationManager) {
+            return this.getImageData();
+        }
+
+        // 新しいキャンバスを作成して統合
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = this.canvas.width;
+        finalCanvas.height = this.canvas.height;
+        const finalCtx = finalCanvas.getContext('2d');
+
+        // ベース画像を描画
+        finalCtx.drawImage(this.canvas, 0, 0);
+
+        // デコレーションを描画
+        const previewArea = document.querySelector('.acrylic-stand-preview');
+        const rect = previewArea.getBoundingClientRect();
+        
+        this.decorationManager.getDecorations()
+            .sort((a, b) => a.zIndex - b.zIndex)
+            .forEach(decoration => {
+                finalCtx.save();
+                
+                const x = (decoration.x / 100) * finalCanvas.width;
+                const y = (decoration.y / 100) * finalCanvas.height;
+                
+                finalCtx.translate(x, y);
+                finalCtx.rotate((decoration.rotation * Math.PI) / 180);
+                
+                if (decoration.type === 'motif' && decoration.element) {
+                    const img = decoration.element;
+                    if (img.complete) {
+                        finalCtx.drawImage(
+                            img,
+                            -decoration.width / 2,
+                            -decoration.height / 2,
+                            decoration.width,
+                            decoration.height
+                        );
+                    }
+                } else if (decoration.type === 'text') {
+                    finalCtx.font = `${decoration.fontSize}px ${decoration.fontFamily}`;
+                    finalCtx.fillStyle = decoration.color;
+                    finalCtx.textAlign = 'center';
+                    finalCtx.textBaseline = 'middle';
+                    finalCtx.fillText(decoration.text, 0, 0);
+                }
+                
+                finalCtx.restore();
+            });
+
+        return finalCanvas.toDataURL('image/png');
     }
 }
 

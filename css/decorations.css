@@ -1,0 +1,322 @@
+/* ================================
+   Decoration Panel Styles
+   ================================ */
+
+.decoration-panel {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 1px solid var(--glass-border);
+}
+
+.decoration-panel h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+}
+
+/* Category Tabs */
+.decoration-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.decoration-tab {
+    padding: 0.6rem 1.2rem;
+    background: white;
+    border: 2px solid var(--color-secondary);
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.decoration-tab:hover {
+    background: var(--color-secondary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.decoration-tab.active {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    color: white;
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Motif Grid */
+.motif-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.motif-item {
+    background: white;
+    border: 2px solid var(--color-secondary);
+    border-radius: 12px;
+    padding: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.motif-item:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+.motif-item img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.motif-item span {
+    font-size: 0.75rem;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+/* Text Controls */
+.text-controls {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.text-control-group {
+    margin-bottom: 1rem;
+}
+
+.text-control-group:last-child {
+    margin-bottom: 0;
+}
+
+.text-control-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.text-control-group input[type="text"],
+.text-control-group input[type="number"],
+.text-control-group select {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--color-secondary);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.text-control-group input[type="color"] {
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--color-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.text-control-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.text-control-buttons button {
+    flex: 1;
+    padding: 0.6rem;
+    border: 1px solid var(--color-secondary);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.text-control-buttons button:hover {
+    background: var(--color-secondary);
+    color: white;
+}
+
+.text-control-buttons button.primary {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    color: white;
+    border: none;
+}
+
+.text-control-buttons button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Layer Controls */
+.layer-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.layer-btn {
+    flex: 1;
+    padding: 0.6rem;
+    border: 1px solid var(--color-secondary);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+}
+
+.layer-btn:hover {
+    background: var(--color-secondary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Clear Button */
+.clear-decorations-btn {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--color-text-light);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.clear-decorations-btn:hover {
+    background: var(--color-text);
+    transform: translateY(-2px);
+}
+
+/* ================================
+   Decoration Elements on Canvas
+   ================================ */
+
+.decoration-element {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.decoration-controls {
+    user-select: none;
+}
+
+.decoration-border {
+    border-radius: 4px;
+}
+
+.decoration-handle {
+    transition: transform 0.2s ease;
+}
+
+.decoration-handle:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.decoration-handle:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* ================================
+   Tab Content Visibility
+   ================================ */
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ================================
+   Responsive Design for Decorations
+   ================================ */
+
+@media (max-width: 768px) {
+    .decoration-tabs {
+        justify-content: center;
+    }
+    
+    .decoration-tab {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .motif-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 0.8rem;
+    }
+    
+    .motif-item img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .motif-item span {
+        font-size: 0.7rem;
+    }
+    
+    .decoration-panel {
+        padding: 1rem;
+    }
+    
+    .text-control-buttons {
+        flex-direction: column;
+    }
+    
+    .layer-controls {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .decoration-panel h3 {
+        font-size: 1.1rem;
+    }
+    
+    .motif-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .motif-item {
+        padding: 0.5rem;
+    }
+    
+    .motif-item img {
+        width: 35px;
+        height: 35px;
+    }
+}
+
+/* ================================
+   Hidden State
+   ================================ */
+
+.decoration-panel.hidden {
+    display: none;
+}

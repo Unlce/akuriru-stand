@@ -6,6 +6,7 @@
     <title>アクリルスタンド作成サービス | オリジナルグッズを手軽に</title>
     <meta name="description" content="好きな画像でオリジナルアクリルスタンドを作成・注文できるウェブサイト。1個から注文可能、透明感のある美しいデザイン。">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/decorations.css">
 </head>
 <body>
     <!-- Header -->
@@ -149,6 +150,79 @@
                             </div>
 
                             <button id="reset-image" class="control-btn secondary">画像をリセット</button>
+                        </div>
+                    </div>
+
+                    <!-- Decoration Panel -->
+                    <div id="decoration-panel" class="decoration-panel">
+                        <h3>✨ デコレーション</h3>
+                        
+                        <!-- Category Tabs -->
+                        <div class="decoration-tabs">
+                            <button class="decoration-tab active" data-tab="motifs">💖 モチーフ</button>
+                            <button class="decoration-tab" data-tab="text">✏️ テキスト</button>
+                            <button class="decoration-tab" data-tab="layers">📚 レイヤー</button>
+                        </div>
+
+                        <!-- Motifs Tab -->
+                        <div id="motifs-tab" class="tab-content active">
+                            <div class="decoration-tabs" style="margin-bottom: 1rem;">
+                                <button class="decoration-tab active" data-category="hearts">💖 ハート</button>
+                                <button class="decoration-tab" data-category="ribbons">🎀 リボン</button>
+                                <button class="decoration-tab" data-category="stars">⭐ 星</button>
+                                <button class="decoration-tab" data-category="flowers">🌸 花</button>
+                                <button class="decoration-tab" data-category="effects">✨ エフェクト</button>
+                            </div>
+                            <div id="motif-grid" class="motif-grid">
+                                <!-- Motifs will be dynamically inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Text Tab -->
+                        <div id="text-tab" class="tab-content">
+                            <div class="text-controls">
+                                <div class="text-control-group">
+                                    <label for="text-input">テキスト</label>
+                                    <input type="text" id="text-input" placeholder="テキストを入力...">
+                                </div>
+                                <div class="text-control-group">
+                                    <label for="font-select">フォント</label>
+                                    <select id="font-select">
+                                        <option value="'ヒラギノ角ゴ Pro', 'Hiragino Kaku Gothic Pro', sans-serif">ヒラギノ角ゴ</option>
+                                        <option value="'メイリオ', Meiryo, sans-serif">メイリオ</option>
+                                        <option value="'游ゴシック', 'Yu Gothic', sans-serif">游ゴシック</option>
+                                        <option value="'UD デジタル 教科書体', sans-serif">UD デジタル教科書体</option>
+                                        <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                                        <option value="'Arial', sans-serif">Arial</option>
+                                    </select>
+                                </div>
+                                <div class="text-control-group">
+                                    <label for="font-size">サイズ: <span id="font-size-value">24px</span></label>
+                                    <input type="range" id="font-size" min="12" max="72" value="24">
+                                </div>
+                                <div class="text-control-group">
+                                    <label for="text-color">色</label>
+                                    <input type="color" id="text-color" value="#000000">
+                                </div>
+                                <div class="text-control-buttons">
+                                    <button id="add-text-btn" class="primary">テキストを追加</button>
+                                    <button id="update-text-btn">選択中を更新</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Layers Tab -->
+                        <div id="layers-tab" class="tab-content">
+                            <div class="text-controls">
+                                <p style="color: var(--color-text-light); margin-bottom: 1rem; font-size: 0.9rem;">
+                                    デコレーションを選択してレイヤー順序を変更できます
+                                </p>
+                                <div class="layer-controls">
+                                    <button id="bring-to-front-btn" class="layer-btn">⬆️ 前面へ</button>
+                                    <button id="send-to-back-btn" class="layer-btn">⬇️ 背面へ</button>
+                                </div>
+                                <button id="clear-decorations-btn" class="clear-decorations-btn">すべてクリア</button>
+                            </div>
                         </div>
                     </div>
 
@@ -311,6 +385,7 @@
     </footer>
 
     <script src="js/main.js" defer></script>
+    <script src="js/decorations.js" defer></script>
     <script src="js/editor.js" defer></script>
     <script src="js/payment.js" defer></script>
 </body>
