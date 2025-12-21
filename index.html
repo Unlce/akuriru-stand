@@ -7,6 +7,7 @@
     <meta name="description" content="好きな画像でオリジナルアクリルスタンドを作成・注文できるウェブサイト。1個から注文可能、透明感のある美しいデザイン。">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/decorations.css">
+    <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
     <!-- Header -->
@@ -117,39 +118,192 @@
                         <div class="editor-controls">
                             <h3>編集ツール</h3>
                             
-                            <div class="control-group">
-                                <label>回転</label>
-                                <div class="button-group">
-                                    <button id="rotate-left" class="control-btn">↶ 左回転</button>
-                                    <button id="rotate-right" class="control-btn">↷ 右回転</button>
+                            <!-- Editor Mode Tabs -->
+                            <div class="editor-mode-tabs">
+                                <button class="editor-mode-tab active" data-mode="basic">
+                                    🖼️ 基本編集
+                                </button>
+                                <button class="editor-mode-tab" data-mode="cropping">
+                                    ✂️ 切り抜き
+                                </button>
+                                <button class="editor-mode-tab" data-mode="base">
+                                    🪑 台座編集
+                                </button>
+                            </div>
+
+                            <!-- Basic Editing Panel (existing controls) -->
+                            <div id="basic-editing-panel" class="tool-panel active">
+                                <div class="control-group">
+                                    <label>回転</label>
+                                    <div class="button-group">
+                                        <button id="rotate-left" class="control-btn">↶ 左回転</button>
+                                        <button id="rotate-right" class="control-btn">↷ 右回転</button>
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <label>サイズ調整</label>
+                                    <input type="range" id="scale-slider" min="50" max="200" value="100" class="slider">
+                                    <span id="scale-value">100%</span>
+                                </div>
+
+                                <button id="reset-image" class="control-btn secondary">画像をリセット</button>
+                            </div>
+
+                            <!-- Cropping Tools Panel -->
+                            <div id="cropping-panel" class="tool-panel cropping-panel">
+                                <div class="tool-panel-content">
+                                    <div class="cropping-tools">
+                                        <button class="crop-tool-btn active" data-tool="freehand">
+                                            <span class="tool-icon">✏️</span>
+                                            <span class="tool-label">自由選択</span>
+                                        </button>
+                                        <button class="crop-tool-btn" data-tool="polygon">
+                                            <span class="tool-icon">⬟</span>
+                                            <span class="tool-label">多角形</span>
+                                        </button>
+                                        <button class="crop-tool-btn" data-tool="eraser">
+                                            <span class="tool-icon">🧹</span>
+                                            <span class="tool-label">消しゴム</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="brush-size-control">
+                                        <label>
+                                            ブラシサイズ: <span id="brush-size-value">20</span>px
+                                        </label>
+                                        <input type="range" id="brush-size-slider" class="brush-size-slider" 
+                                               min="5" max="100" value="20">
+                                    </div>
+
+                                    <div class="crop-actions">
+                                        <button id="crop-undo-btn" class="crop-action-btn secondary">
+                                            ↶ 元に戻す
+                                        </button>
+                                        <button id="crop-redo-btn" class="crop-action-btn secondary">
+                                            ↷ やり直す
+                                        </button>
+                                    </div>
+
+                                    <div class="crop-actions">
+                                        <button id="crop-complete-polygon-btn" class="crop-action-btn secondary" style="display: none;">
+                                            ✓ 選択完了
+                                        </button>
+                                        <button id="crop-reset-btn" class="crop-action-btn secondary">
+                                            🔄 リセット
+                                        </button>
+                                        <button id="crop-apply-btn" class="crop-action-btn primary">
+                                            ✓ 切り抜き確定
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="control-group">
-                                <label>サイズ調整</label>
-                                <input type="range" id="scale-slider" min="50" max="200" value="100" class="slider">
-                                <span id="scale-value">100%</span>
-                            </div>
+                            <!-- Base Editor Panel -->
+                            <div id="base-editor-panel" class="tool-panel base-editor-panel">
+                                <div class="tool-panel-content">
+                                    <div class="base-color-control">
+                                        <label>形状</label>
+                                        <div class="base-shapes">
+                                            <button class="base-shape-btn active" data-shape="rectangle">
+                                                <span class="shape-icon">⬜</span>
+                                                <span class="shape-label">四角形</span>
+                                            </button>
+                                            <button class="base-shape-btn" data-shape="rounded">
+                                                <span class="shape-icon">▢</span>
+                                                <span class="shape-label">角丸</span>
+                                            </button>
+                                            <button class="base-shape-btn" data-shape="circle">
+                                                <span class="shape-icon">⚪</span>
+                                                <span class="shape-label">円形</span>
+                                            </button>
+                                            <button class="base-shape-btn" data-shape="heart">
+                                                <span class="shape-icon">💖</span>
+                                                <span class="shape-label">ハート</span>
+                                            </button>
+                                            <button class="base-shape-btn" data-shape="star">
+                                                <span class="shape-icon">⭐</span>
+                                                <span class="shape-label">星</span>
+                                            </button>
+                                        </div>
+                                    </div>
 
-                            <div class="control-group">
-                                <label>台座デザイン</label>
-                                <div class="base-options">
-                                    <button class="base-option base-default active" data-base="default">
-                                        <div class="base-preview base-default"></div>
-                                        <span>デフォルト</span>
-                                    </button>
-                                    <button class="base-option base-round" data-base="round">
-                                        <div class="base-preview base-round"></div>
-                                        <span>ラウンド</span>
-                                    </button>
-                                    <button class="base-option base-square" data-base="square">
-                                        <div class="base-preview base-square"></div>
-                                        <span>スクエア</span>
-                                    </button>
+                                    <div class="base-color-control">
+                                        <label>色</label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" id="base-color-picker" class="color-picker" value="#FFB6C1">
+                                            <span id="base-color-value" class="color-value">#FFB6C1</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="base-gradient-control">
+                                        <label>
+                                            <div class="gradient-toggle">
+                                                <input type="checkbox" id="base-gradient-toggle">
+                                                <span>グラデーション</span>
+                                            </div>
+                                        </label>
+                                        <div id="gradient-colors" class="gradient-colors" style="display: none;">
+                                            <div class="color-picker-wrapper">
+                                                <input type="color" id="gradient-color1" class="color-picker" value="#FFB6C1">
+                                                <span class="color-value">色1</span>
+                                            </div>
+                                            <div class="color-picker-wrapper">
+                                                <input type="color" id="gradient-color2" class="color-picker" value="#E6E6FA">
+                                                <span class="color-value">色2</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="base-opacity-control">
+                                        <label>
+                                            透明度: <span id="base-opacity-value">100</span>%
+                                        </label>
+                                        <input type="range" id="base-opacity-slider" class="slider-control" 
+                                               min="0" max="100" value="100">
+                                    </div>
+
+                                    <div class="base-size-control">
+                                        <label>
+                                            サイズ: <span id="base-size-value">100</span>%
+                                        </label>
+                                        <input type="range" id="base-size-slider" class="slider-control" 
+                                               min="50" max="200" value="100">
+                                    </div>
+
+                                    <div class="base-text-controls">
+                                        <label>台座にテキスト追加</label>
+                                        <input type="text" id="base-text-input" class="base-text-input" 
+                                               placeholder="テキストを入力...">
+                                        <select id="base-font-select" class="base-font-select">
+                                            <option value="'ヒラギノ角ゴ Pro', sans-serif">ヒラギノ角ゴ</option>
+                                            <option value="'メイリオ', Meiryo, sans-serif">メイリオ</option>
+                                            <option value="'游ゴシック', sans-serif">游ゴシック</option>
+                                            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                                            <option value="'Arial', sans-serif">Arial</option>
+                                        </select>
+                                        <div class="color-picker-wrapper">
+                                            <label>文字色:</label>
+                                            <input type="color" id="base-text-color" class="color-picker" value="#000000">
+                                        </div>
+                                        <div class="base-opacity-control">
+                                            <label>
+                                                文字サイズ: <span id="base-text-size-value">16</span>px
+                                            </label>
+                                            <input type="range" id="base-text-size-slider" class="slider-control" 
+                                                   min="12" max="48" value="16">
+                                        </div>
+                                        <div class="base-text-actions">
+                                            <button id="base-text-add-btn" class="base-text-btn primary">
+                                                ＋ テキスト追加
+                                            </button>
+                                            <button id="base-text-remove-btn" class="base-text-btn secondary">
+                                                － 削除
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <button id="reset-image" class="control-btn secondary">画像をリセット</button>
                         </div>
                     </div>
 
@@ -386,6 +540,8 @@
 
     <script src="js/main.js" defer></script>
     <script src="js/decorations.js" defer></script>
+    <script src="js/cropping.js" defer></script>
+    <script src="js/base-editor.js" defer></script>
     <script src="js/editor.js" defer></script>
     <script src="js/payment.js" defer></script>
 </body>
