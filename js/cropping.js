@@ -64,8 +64,7 @@ class CroppingTool {
         // Save initial state
         this.saveHistory();
         
-        // Show cropping overlay
-        this.renderPreview();
+        // Note: renderPreview() will be called by the parent editor's render() method
     }
     
     // Deactivate cropping mode
