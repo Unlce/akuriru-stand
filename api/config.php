@@ -8,9 +8,9 @@
 
 // データベース接続情報（Lolipop の情報を入力してください）
 define('DB_HOST', 'mysql000.lolipop.jp');           // データベースホスト名
-define('DB_NAME', 'LAA0000000-yourdbname');          // データベース名
-define('DB_USER', 'LAA0000000');                     // データベースユーザー名
-define('DB_PASS', 'your_database_password');         // データベースパスワード
+define('DB_NAME', 'LAA1658426-stand');          // データベース名
+define('DB_USER', 'LAA1658426');                     // データベースユーザー名
+define('DB_PASS', 'hlcz107bb');         // データベースパスワード
 define('DB_CHARSET', 'utf8mb4');                     // 文字セット（日本語対応）
 
 // CORS設定（必要に応じて許可するオリジンを変更）
