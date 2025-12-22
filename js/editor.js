@@ -49,7 +49,9 @@ class ImageEditor {
 
         if (fileInput) {
             fileInput.addEventListener('change', (e) => {
+                console.log('[Editor] File input change event triggered');
                 if (e.target.files && e.target.files[0]) {
+                    console.log('[Editor] File selected:', e.target.files[0].name);
                     this.loadImage(e.target.files[0]);
                 }
             });
@@ -80,12 +82,13 @@ class ImageEditor {
                 }
             });
 
-            // Also allow clicking on upload area
-            uploadArea.addEventListener('click', () => {
-                if (!this.image) {
-                    fileInput.click();
-                }
-            });
+            // Allow clicking on upload area (only if no image is loaded)
+            // Removed to fix double-click issue - selectFileBtn already handles this
+            // uploadArea.addEventListener('click', () => {
+            //     if (!this.image) {
+            //         fileInput.click();
+            //     }
+            // });
         }
 
         // Rotation controls
@@ -141,6 +144,8 @@ class ImageEditor {
     }
 
     loadImage(file) {
+        console.log('[Editor] loadImage called with file:', file.name, 'size:', file.size, 'type:', file.type);
+        
         // Validate file size
         if (file.size > EDITOR_CONFIG.MAX_FILE_SIZE) {
             alert(`ファイルサイズは${EDITOR_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB以下にしてください。`);
@@ -153,10 +158,13 @@ class ImageEditor {
             return;
         }
 
+        console.log('[Editor] File validation passed, reading file...');
         const reader = new FileReader();
         reader.onload = (e) => {
+            console.log('[Editor] File loaded, creating image object...');
             const img = new Image();
             img.onload = () => {
+                console.log('[Editor] Image loaded successfully:', img.width, 'x', img.height);
                 this.image = img;
                 this.rotation = 0;
                 this.scale = 1;
@@ -174,6 +182,7 @@ class ImageEditor {
 
                 this.render();
                 this.showEditor();
+                console.log('[Editor] Image rendering complete');
             };
             img.src = e.target.result;
         };

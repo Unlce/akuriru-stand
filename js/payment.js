@@ -124,11 +124,15 @@ class OrderManager {
     }
 
     async submitOrder() {
+        console.log('[Payment] submitOrder called');
+        
         // Get form data
         const customerName = document.getElementById('customer-name').value;
         const customerEmail = document.getElementById('customer-email').value;
         const customerPhone = document.getElementById('customer-phone').value;
         const customerAddress = document.getElementById('customer-address').value;
+
+        console.log('[Payment] Form data:', { customerName, customerEmail, customerPhone });
 
         // Validate form
         if (!customerName || !customerEmail || !customerPhone || !customerAddress) {
@@ -163,12 +167,17 @@ class OrderManager {
             let imagePath = null;
             const imageData = window.imageEditor.getImageData();
             
+            console.log('[Payment] Image data obtained, length:', imageData ? imageData.length : 0);
+            
             if (imageData) {
+                console.log('[Payment] Starting image upload...');
                 imagePath = await this.uploadImage(imageData);
+                console.log('[Payment] Image upload completed, path:', imagePath);
             }
 
             // Collect analytics data
             const analytics = this.collectAnalyticsData();
+            console.log('[Payment] Analytics data collected:', analytics);
 
             // Create order object for API
             const orderData = {
@@ -194,9 +203,12 @@ class OrderManager {
             };
 
             // Submit order to backend API
+            console.log('[Payment] Submitting order to backend API...');
             const result = await this.submitToBackend(orderData);
 
             if (result.success) {
+                console.log('[Payment] Order submitted successfully:', result);
+                
                 // Add to gallery
                 if (window.galleryManager) {
                     window.galleryManager.addItem({
@@ -218,7 +230,23 @@ class OrderManager {
             }
 
         } catch (error) {
-            console.error('Order submission error:', error);
+            console.error('[Payment] Order submission error:', error);
+            console.error('[Payment] Error type:', error.name);
+            console.error('[Payment] Error message:', error.message);
+            
+            // Provide more detailed error messages to users
+            let userMessage = '注文を保存しました（オフラインモード）。後ほど管理者が確認します。';
+            
+            if (error.message.includes('HTTP 405')) {
+                userMessage = 'APIエンドポイントへのアクセスに問題があります。オフラインモードで注文を保存しました。';
+                console.error('[Payment] HTTP 405 error - Method not allowed. Check API endpoint configuration.');
+            } else if (error.message.includes('HTTP 404')) {
+                userMessage = 'APIが見つかりません。オフラインモードで注文を保存しました。';
+                console.error('[Payment] HTTP 404 error - API endpoint not found.');
+            } else if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+                userMessage = 'ネットワークエラーが発生しました。オフラインモードで注文を保存しました。';
+                console.error('[Payment] Network error - Could not connect to API.');
+            }
             
             // Fallback to localStorage if API fails
             const fallbackOrder = {
@@ -240,6 +268,7 @@ class OrderManager {
             };
             
             this.saveToLocalStorage(fallbackOrder);
+            console.log('[Payment] Order saved to localStorage:', fallbackOrder.id);
             
             // Add to gallery
             if (window.galleryManager) {
@@ -256,7 +285,7 @@ class OrderManager {
             // Show success modal
             window.ModalManager.show('success-modal');
 
-            alert('注文を保存しました（オフラインモード）。後ほど管理者が確認します。');
+            alert(userMessage);
         } finally {
             // Re-enable submit button
             if (submitBtn) {
@@ -272,29 +301,47 @@ class OrderManager {
      * @returns {Promise<string|null>} アップロードされた画像のパス
      */
     async uploadImage(imageData) {
+        console.log('[Payment] Starting image upload...');
         try {
             // Base64 を Blob に変換
             const blob = await this.base64ToBlob(imageData);
+            console.log('[Payment] Converted to blob, size:', blob.size);
             
             // FormData を作成
             const formData = new FormData();
             formData.append('image', blob, 'design.png');
 
+            console.log('[Payment] Sending POST request to api/upload.php...');
             // API にアップロード
             const response = await fetch('api/upload.php', {
                 method: 'POST',
                 body: formData
             });
 
+            console.log('[Payment] Upload response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[Payment] Upload failed with status:', response.status, 'Response:', errorText);
+                throw new Error(`アップロードに失敗しました (HTTP ${response.status})`);
+            }
+
             const result = await response.json();
+            console.log('[Payment] Upload response:', result);
 
             if (result.success) {
+                console.log('[Payment] Image uploaded successfully:', result.file.path);
                 return result.file.path;
             } else {
                 throw new Error(result.error || 'アップロードに失敗しました');
             }
         } catch (error) {
-            console.error('Image upload error:', error);
+            console.error('[Payment] Image upload error:', error);
+            console.error('[Payment] Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             return null;
         }
     }
@@ -356,19 +403,43 @@ class OrderManager {
      * @returns {Promise<Object>} API レスポンス
      */
     async submitToBackend(orderData) {
-        const response = await fetch('api/orders.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        });
+        console.log('[Payment] Submitting order to backend...');
+        console.log('[Payment] Order data:', JSON.stringify(orderData, null, 2));
+        
+        try {
+            const response = await fetch('api/orders.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.log('[Payment] Order submission response status:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[Payment] Order submission failed:', response.status, 'Response:', errorText);
+                throw new Error(`注文の送信に失敗しました (HTTP ${response.status})`);
+            }
+
+            const result = await response.json();
+            console.log('[Payment] Order submission result:', result);
+            
+            if (!result.success) {
+                throw new Error(result.error || '注文の送信に失敗しました');
+            }
+
+            return result;
+        } catch (error) {
+            console.error('[Payment] submitToBackend error:', error);
+            console.error('[Payment] Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            throw error;
         }
-
-        return await response.json();
     }
 
     /**
