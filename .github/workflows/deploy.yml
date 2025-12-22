@@ -17,6 +17,6 @@ jobs:
           lftp -c "
             set ftp:ssl-allow no;
             open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
-            mirror -R --verbose --exclude .git --exclude .github ./ /acrylic-stand/;
+            mirror -R --verbose --exclude .git --exclude .github ./ acrylic-stand/;
             quit
           "
