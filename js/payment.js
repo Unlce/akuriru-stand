@@ -14,6 +14,35 @@ class OrderManager {
         this.setupEventListeners();
         this.updateTotalPrice();
         this.initSessionTracking();
+        this.checkApiAvailability();
+    }
+
+    /**
+     * APIの可用性をチェック（診断用）
+     */
+    async checkApiAvailability() {
+        if (typeof window !== 'undefined' && window.location.protocol !== 'file:') {
+            console.log('[Payment] Checking API availability...');
+            
+            try {
+                // Check upload.php with OPTIONS request
+                const uploadCheck = await fetch('api/upload.php', { method: 'OPTIONS' });
+                console.log('[Payment] upload.php availability:', uploadCheck.status, uploadCheck.statusText);
+                
+                // Check orders.php with OPTIONS request
+                const ordersCheck = await fetch('api/orders.php', { method: 'OPTIONS' });
+                console.log('[Payment] orders.php availability:', ordersCheck.status, ordersCheck.statusText);
+                
+                if (uploadCheck.status === 200 && ordersCheck.status === 200) {
+                    console.log('[Payment] ✓ Both API endpoints are accessible');
+                } else {
+                    console.warn('[Payment] ⚠ Some API endpoints may not be accessible');
+                }
+            } catch (error) {
+                console.warn('[Payment] ⚠ API availability check failed:', error.message);
+                console.warn('[Payment] This is normal if running locally without a PHP server');
+            }
+        }
     }
 
     /**
