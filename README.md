@@ -162,11 +162,36 @@ http://localhost:8080/index.html
 
 Lolipop への詳細なデプロイ手順は [**デプロイメントガイド**](docs/DEPLOYMENT.md) を参照してください。
 
+#### 手動デプロイ
+
 1. データベース作成
 2. ファイルアップロード
 3. 設定ファイル編集
 4. データベース初期化
 5. パーミッション設定
+
+#### 自動デプロイ (GitHub Actions)
+
+main ブランチへのプッシュ時に自動的に Lolipop サーバーへ FTP デプロイされます。
+
+**初回セットアップ:**
+
+1. GitHub リポジトリの **Settings** → **Secrets and variables** → **Actions** へ移動
+2. 以下の Secrets を追加：
+   - `FTP_SERVER`: Lolipop の FTP サーバーアドレス (例: `ftp.lolipop.jp`)
+   - `FTP_USERNAME`: Lolipop のアカウント名
+   - `FTP_PASSWORD`: Lolipop のパスワード
+   - `FTP_REMOTE_PATH`: リモートディレクトリパス (例: `/` または任意のパス)
+
+**Lolipop FTP 情報の確認方法:**
+
+1. [Lolipop ユーザー専用ページ](https://user.lolipop.jp/) にログイン
+2. 左メニューから **「ユーザー設定」** → **「アカウント情報」** を確認
+   - FTP サーバー: `ftp.lolipop.jp`
+   - FTP アカウント: アカウント名が表示されます
+   - FTP パスワード: ログインパスワードと同じ
+
+詳細は [デプロイメントガイド](docs/DEPLOYMENT.md) を参照してください。
 
 ## 🔐 セキュリティ
 
