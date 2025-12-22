@@ -26,17 +26,22 @@ class OrderManager {
             
             try {
                 // Check upload.php with OPTIONS request
+                // Note: 405 (Method Not Allowed) or 200 both indicate the endpoint exists
                 const uploadCheck = await fetch('api/upload.php', { method: 'OPTIONS' });
-                console.log('[Payment] upload.php availability:', uploadCheck.status, uploadCheck.statusText);
+                const uploadAvailable = uploadCheck.status === 200 || uploadCheck.status === 405;
+                console.log('[Payment] upload.php availability:', uploadCheck.status, uploadCheck.statusText, uploadAvailable ? '✓' : '✗');
                 
                 // Check orders.php with OPTIONS request
                 const ordersCheck = await fetch('api/orders.php', { method: 'OPTIONS' });
-                console.log('[Payment] orders.php availability:', ordersCheck.status, ordersCheck.statusText);
+                const ordersAvailable = ordersCheck.status === 200 || ordersCheck.status === 405;
+                console.log('[Payment] orders.php availability:', ordersCheck.status, ordersCheck.statusText, ordersAvailable ? '✓' : '✗');
                 
-                if (uploadCheck.status === 200 && ordersCheck.status === 200) {
+                if (uploadAvailable && ordersAvailable) {
                     console.log('[Payment] ✓ Both API endpoints are accessible');
                 } else {
                     console.warn('[Payment] ⚠ Some API endpoints may not be accessible');
+                    if (!uploadAvailable) console.warn('[Payment]   - upload.php is not accessible');
+                    if (!ordersAvailable) console.warn('[Payment]   - orders.php is not accessible');
                 }
             } catch (error) {
                 console.warn('[Payment] ⚠ API availability check failed:', error.message);
@@ -349,10 +354,22 @@ class OrderManager {
 
             console.log('[Payment] Upload response status:', response.status, response.statusText);
             
+            // Clone response before consuming it for error handling
+            const responseClone = response.clone();
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[Payment] Upload failed with status:', response.status, 'Response:', errorText);
-                throw new Error(`アップロードに失敗しました (HTTP ${response.status})`);
+                let errorMessage = `アップロードに失敗しました (HTTP ${response.status})`;
+                try {
+                    const result = await responseClone.json();
+                    if (result.error) {
+                        errorMessage = result.error;
+                    }
+                    console.error('[Payment] Upload failed with JSON error:', result);
+                } catch (e) {
+                    // If JSON parsing fails, get status text
+                    console.error('[Payment] Upload failed, status:', response.status, response.statusText);
+                }
+                throw new Error(errorMessage);
             }
 
             const result = await response.json();
@@ -446,10 +463,22 @@ class OrderManager {
 
             console.log('[Payment] Order submission response status:', response.status, response.statusText);
             
+            // Clone response before consuming it for error handling
+            const responseClone = response.clone();
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[Payment] Order submission failed:', response.status, 'Response:', errorText);
-                throw new Error(`注文の送信に失敗しました (HTTP ${response.status})`);
+                let errorMessage = `注文の送信に失敗しました (HTTP ${response.status})`;
+                try {
+                    const result = await responseClone.json();
+                    if (result.error) {
+                        errorMessage = result.error;
+                    }
+                    console.error('[Payment] Order submission failed with JSON error:', result);
+                } catch (e) {
+                    // If JSON parsing fails, get status text
+                    console.error('[Payment] Order submission failed, status:', response.status, response.statusText);
+                }
+                throw new Error(errorMessage);
             }
 
             const result = await response.json();
