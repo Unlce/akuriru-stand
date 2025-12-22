@@ -11,14 +11,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /acrylic-stand/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            .github/**
+      - name: Deploy via lftp
+        run: |
+          sudo apt-get install -y lftp
+          lftp -c "
+            set ftp:ssl-allow no;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+            mirror -R --verbose --exclude .git --exclude .github ./ /acrylic-stand/;
+            quit
+          "
