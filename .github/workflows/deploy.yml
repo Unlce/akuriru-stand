@@ -16,12 +16,12 @@ jobs:
           sudo apt-get install -y lftp
           lftp -c "
             set ssl:verify-certificate no;
-            set ftp:ssl-protect-data yes;
             set ftp:ssl-allow yes;
+            set ftp:passive-mode yes;
             set net:timeout 30;
             set net:max-retries 3;
             debug 3;
-            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ftp://${{ secrets.FTP_SERVER }};
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
             mirror -R --verbose --exclude .git --exclude .github ./ ./;
             quit
           "
