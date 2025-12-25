@@ -188,12 +188,25 @@ function createOrder() {
         // トランザクションをコミット
         $pdo->commit();
         
+        // メール通知（失敗しても注文処理は継続）
+        $emailStatus = [
+            'customer_email_sent' => false,
+            'admin_email_sent' => false
+        ];
+
+        try {
+            $emailStatus = sendOrderEmails($data, $orderNumber, $totalPrice);
+        } catch (Throwable $e) {
+            error_log('Order email send failed: ' . $e->getMessage());
+        }
+
         // 成功レスポンスを返す
         sendJsonResponse([
             'success' => true,
             'order_number' => $orderNumber,
             'order_id' => $orderId,
-            'message' => '注文が正常に作成されました'
+            'message' => '注文が正常に作成されました',
+            'email_notifications' => $emailStatus
         ], 201);
         
     } catch (Exception $e) {
@@ -337,3 +350,97 @@ function generateOrderNumber($pdo) {
     
     return $prefix . $sequence;
 }
+
+    // 注文メールを顧客と管理者に送信
+    function sendOrderEmails($data, $orderNumber, $totalPrice) {
+        $customerEmail = $data['customer']['email'] ?? '';
+        $adminEmail = defined('SHOP_ADMIN_EMAIL') ? SHOP_ADMIN_EMAIL : '';
+        $fromEmail = defined('SHOP_FROM_EMAIL') ? SHOP_FROM_EMAIL : '';
+
+        $customerEmail = filter_var($customerEmail, FILTER_VALIDATE_EMAIL) ? $customerEmail : '';
+        $adminEmail = filter_var($adminEmail, FILTER_VALIDATE_EMAIL) ? $adminEmail : '';
+        $fromEmail = filter_var($fromEmail, FILTER_VALIDATE_EMAIL) ? $fromEmail : ($adminEmail ?: $customerEmail);
+
+        if (!$customerEmail && !$adminEmail) {
+            error_log('Email not sent: customer and admin email are missing');
+            return [
+                'customer_email_sent' => false,
+                'admin_email_sent' => false
+            ];
+        }
+
+        $headerLines = [];
+        if ($fromEmail) {
+            $headerLines[] = 'From: Acrylic Stand <' . $fromEmail . '>';
+            $headerLines[] = 'Reply-To: ' . $fromEmail;
+        }
+        $headers = implode("\r\n", $headerLines);
+
+        // マルチバイトメール設定
+        if (function_exists('mb_language')) {
+            mb_language('Japanese');
+        }
+        if (function_exists('mb_internal_encoding')) {
+            mb_internal_encoding('UTF-8');
+        }
+
+        $summary = buildOrderEmailBody($data, $orderNumber, $totalPrice);
+
+        $sendMail = function ($to, $subject, $body, $headers) {
+            if (function_exists('mb_send_mail')) {
+                return @mb_send_mail($to, $subject, $body, $headers);
+            }
+            return @mail($to, $subject, $body, $headers);
+        };
+
+        $customerSent = false;
+        if ($customerEmail) {
+            $customerSubject = 'ご注文ありがとうございます (注文番号: ' . $orderNumber . ')';
+            $customerBody = "この度はご注文ありがとうございます。\n\n" . $summary . "\n\nこのメールは自動送信です。ご不明点は返信またはお問い合わせフォームよりご連絡ください。";
+            $customerSent = $sendMail($customerEmail, $customerSubject, $customerBody, $headers);
+        }
+
+        $adminSent = false;
+        if ($adminEmail) {
+            $adminSubject = '新しい注文を受け付けました: ' . $orderNumber;
+            $adminBody = "新しい注文を受け付けました。\n\n" . $summary . "\n\n管理画面で詳細を確認してください。";
+            $adminSent = $sendMail($adminEmail, $adminSubject, $adminBody, $headers);
+        }
+
+        return [
+            'customer_email_sent' => (bool)$customerSent,
+            'admin_email_sent' => (bool)$adminSent
+        ];
+    }
+
+    // メール本文を組み立て
+    function buildOrderEmailBody($data, $orderNumber, $totalPrice) {
+        $sizeNames = [
+            'card' => 'カードサイズ',
+            'postcard' => 'はがきサイズ',
+            'a5' => 'A5サイズ',
+            'a4' => 'A4サイズ'
+        ];
+
+        $orderDetails = $data['order_details'] ?? [];
+        $size = $orderDetails['product_size'] ?? '';
+        $sizeLabel = $sizeNames[$size] ?? $size;
+        $quantity = isset($orderDetails['quantity']) ? (int)$orderDetails['quantity'] : 0;
+        $unitPrice = isset($orderDetails['price']) ? (float)$orderDetails['price'] : 0.0;
+
+        $lines = [
+            '注文番号: ' . $orderNumber,
+            '合計金額: ¥' . number_format($totalPrice),
+            '数量: ' . $quantity . '個',
+            '単価: ¥' . number_format($unitPrice),
+            'サイズ: ' . ($sizeLabel ?: '未指定'),
+            '台座デザイン: ' . ($orderDetails['base_design'] ?? '未指定'),
+            'お名前: ' . ($data['customer']['name'] ?? '未入力'),
+            'メール: ' . ($data['customer']['email'] ?? '未入力'),
+            '電話番号: ' . ($data['customer']['phone'] ?? '未入力'),
+            '住所: ' . ($data['customer']['address'] ?? '未入力'),
+            '注文日時: ' . date('Y-m-d H:i:s')
+        ];
+
+        return implode("\n", $lines);
+    }

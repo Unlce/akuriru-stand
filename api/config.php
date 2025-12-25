@@ -15,6 +15,14 @@ define('DB_USER', 'LAA1658426');                     // データベースユー
 define('DB_PASS', 'hlcz107bb');         // データベースパスワード
 define('DB_CHARSET', 'utf8mb4');                     // 文字セット（日本語対応）
 
+// メール通知設定（環境変数で上書き可能）
+// SHOP_ADMIN_EMAIL: 店舗側の受信アドレス（デフォルトは info@zyniqo.co.jp）
+// SHOP_FROM_EMAIL: 送信元に使うドメイン認証済みアドレス（空の場合は管理者メールを使用）
+// SUBCONTRACT_EMAIL: 下請け（製造/発送パートナー）に送るアドレス
+define('SHOP_ADMIN_EMAIL', getenv('SHOP_ADMIN_EMAIL') ?: 'info@zyniqo.co.jp');
+define('SHOP_FROM_EMAIL', getenv('SHOP_FROM_EMAIL') ?: 'info@zyniqo.co.jp');
+define('SUBCONTRACT_EMAIL', getenv('SUBCONTRACT_EMAIL') ?: '');
+
 // CORS設定（必要に応じて許可するオリジンを変更）
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

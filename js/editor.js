@@ -914,15 +914,21 @@ class ImageEditor {
         // Activate/deactivate cropping tool
         if (this.croppingTool) {
             if (mode === 'cropping' && this.image) {
+                // First render the base image
+                this.render();
+                // Then activate cropping tool with current canvas state
                 const imageData = this.getImageData();
                 this.croppingTool.activate(imageData);
                 if (croppingPanel) croppingPanel.classList.add('active');
-                this.render();
+                // Render again with cropping overlay
+                this.croppingTool.renderPreview();
+                console.log('[Editor] Cropping mode activated');
             } else {
                 this.croppingTool.deactivate();
                 if (this.image) {
                     this.render();
                 }
+                console.log('[Editor] Cropping mode deactivated');
             }
         }
 

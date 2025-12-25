@@ -57,14 +57,18 @@ class CroppingTool {
         this.maskCanvas.width = this.canvas.width;
         this.maskCanvas.height = this.canvas.height;
         
-        // Start with full mask (everything selected)
-        this.maskCtx.fillStyle = 'white';
+        // Start with empty mask (nothing selected - black)
+        this.maskCtx.fillStyle = 'black';
         this.maskCtx.fillRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
+        
+        // Clear history
+        this.history = [];
+        this.historyIndex = -1;
         
         // Save initial state
         this.saveHistory();
         
-        // Note: renderPreview() will be called by the parent editor's render() method
+        console.log('[Cropping] Tool activated, mask initialized');
     }
     
     // Deactivate cropping mode
@@ -229,17 +233,14 @@ class CroppingTool {
         
         this.maskCtx.closePath();
         this.maskCtx.fill();
+        console.log('[Cropping] Freehand selection applied, path points:', this.currentPath.length);
     }
     
     // Apply polygon selection to mask
     applyPolygonSelection() {
         if (this.polygonPoints.length < 3) return;
         
-        // Clear previous mask
-        this.maskCtx.fillStyle = 'black';
-        this.maskCtx.fillRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
-        
-        // Draw polygon
+        // Add polygon to existing mask (don't clear)
         this.maskCtx.fillStyle = 'white';
         this.maskCtx.beginPath();
         this.maskCtx.moveTo(this.polygonPoints[0].x, this.polygonPoints[0].y);
@@ -253,6 +254,7 @@ class CroppingTool {
         
         this.polygonPoints = [];
         this.saveHistory();
+        console.log('[Cropping] Polygon applied');
         this.renderPreview();
     }
     
@@ -374,13 +376,15 @@ class CroppingTool {
     
     // Reset to original image
     reset() {
-        this.maskCtx.fillStyle = 'white';
+        // Reset to empty selection (black mask)
+        this.maskCtx.fillStyle = 'black';
         this.maskCtx.fillRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
         this.currentPath = [];
         this.polygonPoints = [];
         this.history = [];
         this.historyIndex = -1;
         this.saveHistory();
+        console.log('[Cropping] Mask reset');
         this.renderPreview();
     }
     
