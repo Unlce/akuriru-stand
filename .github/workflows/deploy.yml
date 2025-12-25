@@ -27,3 +27,4 @@ jobs:
             **/.vscode/**
             **/.DS_Store
             **/Thumbs.db
+            **/admin/**
