@@ -1,343 +1,236 @@
 /**
  * Admin Panel JavaScript
- * 
- * 管理画面のインタラクティブ機能
+ * Acrylic Stand Shop
  */
 
-// グローバル変数
-let currentOrders = [];
-let currentFilter = {
-    status: '',
-    search: ''
+// API endpoint
+const API_BASE = '../api';
+
+// Status labels
+const STATUS_LABELS = {
+    'pending': 'New',
+    'processing': 'Processing',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled'
 };
 
-// DOM読み込み完了時の初期化
+const STATUS_CLASSES = {
+    'pending': 'status-pending',
+    'processing': 'status-processing',
+    'completed': 'status-completed',
+    'cancelled': 'status-cancelled'
+};
+
+// Size labels
+const SIZE_LABELS = {
+    'card': 'Card Size',
+    'small': 'Small',
+    'medium': 'Medium',
+    'large': 'Large'
+};
+
+// Base labels
+const BASE_LABELS = {
+    'default': 'Standard',
+    'premium': 'Premium',
+    'none': 'None'
+};
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin panel initialized');
-    
-    // 注文一覧を読み込み
     loadOrders();
-    
-    // フィルターのイベントリスナーを設定
-    setupFilters();
-    
-    // モーダルのイベントリスナーを設定
-    setupModal();
+    setupEventListeners();
 });
 
-/**
- * 注文一覧を読み込む
- */
+// Setup event listeners
+function setupEventListeners() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(loadOrders, 300));
+    }
+    
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', loadOrders);
+    }
+    
+    const closeModal = document.querySelector('.close-modal');
+    if (closeModal) {
+        closeModal.addEventListener('click', hideModal);
+    }
+    
+    const modal = document.getElementById('orderDetailModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                hideModal();
+            }
+        });
+    }
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 async function loadOrders() {
+    const loading = document.getElementById('loading');
+    const tbody = document.querySelector('#ordersTable tbody');
+    
+    if (loading) loading.style.display = 'block';
+    
     try {
-        showLoading(true);
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
         
-        // APIから注文一覧を取得
-        let url = '../api/orders.php';
-        const params = new URLSearchParams();
+        let url = API_BASE + '/orders.php?limit=50&offset=0';
         
-        if (currentFilter.status) {
-            params.append('status', currentFilter.status);
+        if (statusFilter && statusFilter.value) {
+            url += '&status=' + encodeURIComponent(statusFilter.value);
         }
         
-        if (params.toString()) {
-            url += '?' + params.toString();
+        if (searchInput && searchInput.value.trim()) {
+            url += '&search=' + encodeURIComponent(searchInput.value.trim());
         }
         
         const response = await fetch(url);
         const data = await response.json();
         
-        if (data.success) {
-            currentOrders = data.orders || [];
-            displayOrders(currentOrders);
-            updateStats(data);
+        if (loading) loading.style.display = 'none';
+        
+        if (data.success && data.orders) {
+            renderOrders(data.orders);
+            updateStats(data.total || data.orders.length);
         } else {
-            showError('注文の読み込みに失敗しました: ' + (data.error || '不明なエラー'));
+            showEmptyState('Failed to load orders');
         }
     } catch (error) {
         console.error('Error loading orders:', error);
-        showError('注文の読み込み中にエラーが発生しました');
-    } finally {
-        showLoading(false);
+        if (loading) loading.style.display = 'none';
+        showEmptyState('Error: ' + error.message);
     }
 }
 
-/**
- * 注文一覧を表示
- */
-function displayOrders(orders) {
+function renderOrders(orders) {
     const tbody = document.querySelector('#ordersTable tbody');
     
-    if (!tbody) {
-        console.error('Orders table body not found');
+    if (!orders || orders.length === 0) {
+        showEmptyState('No orders yet');
         return;
     }
     
-    // 検索フィルタを適用
-    let filteredOrders = orders;
-    if (currentFilter.search) {
-        const searchLower = currentFilter.search.toLowerCase();
-        filteredOrders = orders.filter(order => {
-            return (
-                order.order_number.toLowerCase().includes(searchLower) ||
-                order.customer_name.toLowerCase().includes(searchLower) ||
-                order.customer_email.toLowerCase().includes(searchLower)
-            );
-        });
+    let html = '';
+    for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        const imgHtml = order.image_path 
+            ? '<img src="../' + order.image_path + '" alt="Product" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer;" onclick="showImagePreview(\x27../' + order.image_path + '\x27)">'
+            : '<span style="color: #999;">None</span>';
+        
+        html += '<tr>';
+        html += '<td><strong>' + escapeHtml(order.order_number || order.id) + '</strong></td>';
+        html += '<td>' + formatDate(order.created_at) + '</td>';
+        html += '<td>' + escapeHtml(order.customer_name || 'N/A') + '<br><small style="color: #666;">' + escapeHtml(order.customer_email || '') + '</small></td>';
+        html += '<td>' + imgHtml + '</td>';
+        html += '<td>' + (SIZE_LABELS[order.size] || order.size || 'N/A') + '</td>';
+        html += '<td>' + (BASE_LABELS[order.base_type] || order.base_type || 'N/A') + '</td>';
+        html += '<td>Y' + formatNumber(order.total_price || order.price || 0) + '</td>';
+        html += '<td><span class="status-badge ' + (STATUS_CLASSES[order.status] || 'status-pending') + '">' + (STATUS_LABELS[order.status] || order.status || 'New') + '</span></td>';
+        html += '<td><button class="btn btn-small btn-primary" onclick="showOrderDetail(\x27' + order.id + '\x27)">Detail</button> ';
+        html += '<button class="btn btn-small btn-secondary" onclick="updateOrderStatus(\x27' + order.id + '\x27)">Update</button></td>';
+        html += '</tr>';
     }
-    
-    // テーブルをクリア
-    tbody.innerHTML = '';
-    
-    if (filteredOrders.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="empty-state">
-                    <div class="empty-state-icon">📦</div>
-                    <div class="empty-state-text">注文がありません</div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    // 各注文を表示
-    filteredOrders.forEach(order => {
-        const row = createOrderRow(order);
-        tbody.appendChild(row);
-    });
+    tbody.innerHTML = html;
 }
 
-/**
- * 注文行を作成
- */
-function createOrderRow(order) {
-    const row = document.createElement('tr');
-    row.onclick = () => showOrderDetail(order.id);
-    
-    // サイズ名の変換
-    const sizeNames = {
-        'card': 'カード',
-        'postcard': 'はがき',
-        'a5': 'A5',
-        'a4': 'A4'
-    };
-    
-    // ステータス名の変換
-    const statusNames = {
-        'pending': '新規',
-        'processing': '処理中',
-        'completed': '完了',
-        'cancelled': 'キャンセル'
-    };
-    
-    // 日付のフォーマット
-    const date = new Date(order.created_at);
-    const formattedDate = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-    const formattedTime = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    
-    // 画像パスの検証
-    const imagePath = sanitizeImagePath(order.image_path);
-    const imageHtml = imagePath 
-        ? `<img src="../${escapeHtml(imagePath)}" class="image-thumbnail" alt="商品画像">`
-        : '📷';
-    
-    row.innerHTML = `
-        <td><strong>${escapeHtml(order.order_number)}</strong></td>
-        <td>${formattedDate}<br><small style="color: #999;">${formattedTime}</small></td>
-        <td>${escapeHtml(order.customer_name)}</td>
-        <td>${imageHtml}</td>
-        <td>${sizeNames[order.size] || order.size}</td>
-        <td>${escapeHtml(order.base_type || 'default')}</td>
-        <td>¥${Number(order.total_price || 0).toLocaleString()}</td>
-        <td>
-            <span class="status status-${order.status}">
-                ${statusNames[order.status] || order.status}
-            </span>
-        </td>
-        <td>
-            <button class="btn btn-sm" onclick="event.stopPropagation(); showOrderDetail(${order.id})">
-                詳細
-            </button>
-        </td>
-    `;
-    
-    return row;
+function showEmptyState(message) {
+    const tbody = document.querySelector('#ordersTable tbody');
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">-</div><div class="empty-state-text">' + escapeHtml(message) + '</div></td></tr>';
 }
 
-/**
- * 注文詳細を表示
- */
+function updateStats(total) {
+    const totalOrders = document.getElementById('totalOrders');
+    if (totalOrders) {
+        totalOrders.textContent = total;
+    }
+}
+
 async function showOrderDetail(orderId) {
-    try {
-        showLoading(true);
-        
-        const response = await fetch(`../api/order-detail.php?id=${orderId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            displayOrderDetailModal(data.order);
-        } else {
-            showError('注文詳細の取得に失敗しました: ' + (data.error || '不明なエラー'));
-        }
-    } catch (error) {
-        console.error('Error loading order detail:', error);
-        showError('注文詳細の読み込み中にエラーが発生しました');
-    } finally {
-        showLoading(false);
-    }
-}
-
-/**
- * 注文詳細モーダルを表示
- */
-function displayOrderDetailModal(order) {
     const modal = document.getElementById('orderDetailModal');
     const content = document.getElementById('orderDetailContent');
     
-    if (!modal || !content) {
-        console.error('Modal elements not found');
-        return;
+    if (!modal || !content) return;
+    
+    content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+    modal.style.display = 'flex';
+    
+    try {
+        const response = await fetch(API_BASE + '/orders.php?id=' + orderId);
+        const data = await response.json();
+        
+        if (data.success && data.orders && data.orders.length > 0) {
+            const order = data.orders[0];
+            let html = '<div class="order-detail">';
+            html += '<div class="detail-section"><h3>Order Info</h3>';
+            html += '<p><strong>Order Number:</strong> ' + escapeHtml(order.order_number || order.id) + '</p>';
+            html += '<p><strong>Date:</strong> ' + formatDate(order.created_at) + '</p>';
+            html += '<p><strong>Status:</strong> <span class="status-badge ' + STATUS_CLASSES[order.status] + '">' + (STATUS_LABELS[order.status] || order.status) + '</span></p></div>';
+            html += '<div class="detail-section"><h3>Customer Info</h3>';
+            html += '<p><strong>Name:</strong> ' + escapeHtml(order.customer_name || 'N/A') + '</p>';
+            html += '<p><strong>Email:</strong> ' + escapeHtml(order.customer_email || 'N/A') + '</p>';
+            html += '<p><strong>Phone:</strong> ' + escapeHtml(order.customer_phone || 'N/A') + '</p></div>';
+            html += '<div class="detail-section"><h3>Product Info</h3>';
+            html += '<p><strong>Size:</strong> ' + (SIZE_LABELS[order.size] || order.size || 'N/A') + '</p>';
+            html += '<p><strong>Base:</strong> ' + (BASE_LABELS[order.base_type] || order.base_type || 'N/A') + '</p>';
+            html += '<p><strong>Quantity:</strong> ' + (order.quantity || 1) + '</p>';
+            html += '<p><strong>Price:</strong> Y' + formatNumber(order.total_price || order.price || 0) + '</p></div>';
+            if (order.image_path) {
+                html += '<div class="detail-section"><h3>Product Image</h3>';
+                html += '<img src="../' + order.image_path + '" alt="Product" style="max-width: 200px; border-radius: 8px;"></div>';
+            }
+            html += '</div>';
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<p>Order not found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading order detail:', error);
+        content.innerHTML = '<p>Error loading order.</p>';
     }
-    
-    // サイズ名とステータス名の変換
-    const sizeNames = {
-        'card': 'カードサイズ',
-        'postcard': 'はがきサイズ',
-        'a5': 'A5サイズ',
-        'a4': 'A4サイズ'
-    };
-    
-    const statusNames = {
-        'pending': '新規',
-        'processing': '処理中',
-        'completed': '完了',
-        'cancelled': 'キャンセル'
-    };
-    
-    // 日付のフォーマット
-    const date = new Date(order.created_at);
-    const formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    
-    // 画像パスの検証
-    const imagePath = sanitizeImagePath(order.image_path);
-    const imageHtml = imagePath
-        ? `<img src="../${escapeHtml(imagePath)}" class="order-image" alt="商品画像">`
-        : '<p>画像なし</p>';
-    
-    content.innerHTML = `
-        <div class="order-detail">
-            <div class="detail-section">
-                <h3>📋 注文情報</h3>
-                <div class="detail-row">
-                    <span class="detail-label">注文番号</span>
-                    <span class="detail-value"><strong>${escapeHtml(order.order_number)}</strong></span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">注文日時</span>
-                    <span class="detail-value">${formattedDate}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">ステータス</span>
-                    <span class="detail-value">
-                        <span class="status status-${order.status}">
-                            ${statusNames[order.status] || order.status}
-                        </span>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <h3>👤 お客様情報</h3>
-                <div class="detail-row">
-                    <span class="detail-label">お名前</span>
-                    <span class="detail-value">${escapeHtml(order.customer_name)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">メールアドレス</span>
-                    <span class="detail-value">${escapeHtml(order.customer_email)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">電話番号</span>
-                    <span class="detail-value">${escapeHtml(order.customer_phone)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">配送先住所</span>
-                    <span class="detail-value">${escapeHtml(order.customer_address)}</span>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <h3>🎨 商品情報</h3>
-                ${imageHtml}
-                <div class="detail-row">
-                    <span class="detail-label">サイズ</span>
-                    <span class="detail-value">${sizeNames[order.size] || order.size}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">台座タイプ</span>
-                    <span class="detail-value">${escapeHtml(order.base_type)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">数量</span>
-                    <span class="detail-value">${order.quantity}個</span>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <h3>💰 金額</h3>
-                <div class="detail-row">
-                    <span class="detail-label">商品単価</span>
-                    <span class="detail-value">¥${Number(order.unit_price || 0).toLocaleString()}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">送料</span>
-                    <span class="detail-value">¥${Number(order.shipping_fee || 0).toLocaleString()}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label"><strong>合計金額</strong></span>
-                    <span class="detail-value"><strong>¥${Number(order.total_price || 0).toLocaleString()}</strong></span>
-                </div>
-            </div>
-            
-            <div class="status-actions">
-                <button class="btn" onclick="updateOrderStatus(${order.id}, 'pending')">
-                    🆕 新規にする
-                </button>
-                <button class="btn" onclick="updateOrderStatus(${order.id}, 'processing')">
-                    🔄 処理中にする
-                </button>
-                <button class="btn" onclick="updateOrderStatus(${order.id}, 'completed')">
-                    ✅ 完了にする
-                </button>
-                <button class="btn btn-secondary" onclick="updateOrderStatus(${order.id}, 'cancelled')">
-                    ❌ キャンセルする
-                </button>
-            </div>
-        </div>
-    `;
-    
-    modal.classList.add('active');
 }
 
-/**
- * 注文ステータスを更新
- */
-async function updateOrderStatus(orderId, newStatus) {
-    if (!confirm('ステータスを変更してもよろしいですか？')) {
+function hideModal() {
+    const modal = document.getElementById('orderDetailModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function updateOrderStatus(orderId) {
+    const newStatus = prompt('Enter new status:\n- pending (New)\n- processing (Processing)\n- completed (Completed)\n- cancelled (Cancelled)');
+    
+    if (!newStatus || ['pending', 'processing', 'completed', 'cancelled'].indexOf(newStatus) === -1) {
+        if (newStatus !== null) {
+            alert('Invalid status.');
+        }
         return;
     }
     
     try {
-        showLoading(true);
-        
-        const response = await fetch('../api/update-status.php', {
-            method: 'POST',
+        const response = await fetch(API_BASE + '/orders.php', {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                order_id: orderId,
+                id: orderId,
                 status: newStatus
             })
         });
@@ -345,151 +238,40 @@ async function updateOrderStatus(orderId, newStatus) {
         const data = await response.json();
         
         if (data.success) {
-            showSuccess('ステータスを更新しました');
-            closeModal();
-            loadOrders(); // 一覧を再読み込み
+            alert('Status updated.');
+            loadOrders();
         } else {
-            showError('ステータスの更新に失敗しました: ' + (data.error || '不明なエラー'));
+            alert('Update failed: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error updating status:', error);
-        showError('ステータス更新中にエラーが発生しました');
-    } finally {
-        showLoading(false);
+        alert('Error occurred.');
     }
 }
 
-/**
- * フィルターの設定
- */
-function setupFilters() {
-    // ステータスフィルター
-    const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter) {
-        statusFilter.addEventListener('change', function() {
-            currentFilter.status = this.value;
-            loadOrders();
-        });
-    }
-    
-    // 検索フィルター
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            currentFilter.search = this.value;
-            displayOrders(currentOrders);
-        });
-    }
+function showImagePreview(imagePath) {
+    window.open(imagePath, '_blank');
 }
 
-/**
- * モーダルの設定
- */
-function setupModal() {
-    const modal = document.getElementById('orderDetailModal');
-    const closeBtn = document.querySelector('.close-modal');
-    
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
-    }
-    
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-    }
-}
-
-/**
- * モーダルを閉じる
- */
-function closeModal() {
-    const modal = document.getElementById('orderDetailModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-/**
- * 統計情報を更新
- */
-function updateStats(data) {
-    const totalElement = document.getElementById('totalOrders');
-    if (totalElement && data.total !== undefined) {
-        totalElement.textContent = data.total.toLocaleString();
-    }
-}
-
-/**
- * ローディング表示の切り替え
- */
-function showLoading(show) {
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.classList.toggle('active', show);
-    }
-}
-
-/**
- * エラーメッセージを表示
- */
-function showError(message) {
-    // TODO: より良いUI通知システムを実装する（トーストやモーダル）
-    console.error('Error:', message);
-    alert('エラー: ' + message);
-}
-
-/**
- * 成功メッセージを表示
- */
-function showSuccess(message) {
-    // TODO: より良いUI通知システムを実装する（トーストやモーダル）
-    console.log('Success:', message);
-    alert(message);
-}
-
-/**
- * HTMLエスケープ
- */
 function escapeHtml(text) {
-    if (text === null || text === undefined) {
-        return '';
-    }
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return String(text).replace(/[&<>"']/g, m => map[m]);
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-/**
- * 画像パスの検証とサニタイズ
- * uploadsディレクトリ内の画像のみを許可
- */
-function sanitizeImagePath(path) {
-    if (!path) {
-        return null;
-    }
-    
-    // パスに危険な文字が含まれていないか確認
-    const dangerousChars = ['<', '>', '"', "'", '`', '\\', '\0'];
-    for (const char of dangerousChars) {
-        if (path.includes(char)) {
-            console.warn('Dangerous character detected in image path:', path);
-            return null;
-        }
-    }
-    
-    // uploadsディレクトリから始まることを確認
-    if (!path.startsWith('uploads/')) {
-        console.warn('Invalid image path (must start with uploads/):', path);
-        return null;
-    }
-    
-    return path;
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatNumber(num) {
+    return Number(num).toLocaleString('ja-JP');
 }

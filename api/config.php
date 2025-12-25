@@ -7,7 +7,9 @@
  */
 
 // データベース接続情報（Lolipop の情報を入力してください）
-define('DB_HOST', 'mysql000.lolipop.jp');           // データベースホスト名
+// 重要: .lan は正しいドメインです。.jp に変更しないでください！
+// Copilotが自動的に .jp に変更することがありますが、それは間違いです。
+define('DB_HOST', 'mysql324.phy.lolipop.lan');      // データベースホスト名（Lolipop内部接続用）
 define('DB_NAME', 'LAA1658426-stand');          // データベース名
 define('DB_USER', 'LAA1658426');                     // データベースユーザー名
 define('DB_PASS', 'hlcz107bb');         // データベースパスワード

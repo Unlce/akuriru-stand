@@ -1,6 +1,6 @@
 <?php
 /**
- * Orders API
+ * Orders API - UUID対応版
  * 
  * 注文の作成と状態確認を行うAPIエンドポイント
  */
@@ -23,7 +23,20 @@ try {
     }
 } catch (Exception $e) {
     error_log('Order API Error: ' . $e->getMessage());
-    sendErrorResponse('注文処理中にエラーが発生しました', 500);
+    sendErrorResponse('注文処理中にエラーが発生しました: ' . $e->getMessage(), 500);
+}
+
+/**
+ * UUID v4 を生成
+ */
+function generateUUID() {
+    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
 }
 
 /**
@@ -59,14 +72,6 @@ function createOrder() {
         sendErrorResponse('無効なメールアドレスです');
     }
     
-    // 注文詳細の検証
-    $orderDetailsFields = ['product_size', 'base_design', 'quantity', 'price'];
-    foreach ($orderDetailsFields as $field) {
-        if (!isset($data['order_details'][$field])) {
-            sendErrorResponse("注文詳細が不足しています: {$field}");
-        }
-    }
-    
     // データベース接続
     $pdo = getDbConnection();
     
@@ -74,27 +79,111 @@ function createOrder() {
     $pdo->beginTransaction();
     
     try {
+        // UUIDを生成
+        $customerId = generateUUID();
+        $orderId = generateUUID();
+        $orderDetailsId = generateUUID();
+        $paymentId = generateUUID();
+        $analyticsId = generateUUID();
+        
         // 注文番号を生成
         $orderNumber = generateOrderNumber($pdo);
         
         // 1. 顧客情報を保存
-        $customerId = saveCustomer($pdo, $data['customer']);
+        $stmt = $pdo->prepare('
+            INSERT INTO customers (id, name, email, phone, address, created_at)
+            VALUES (:id, :name, :email, :phone, :address, NOW())
+        ');
+        $stmt->execute([
+            'id' => $customerId,
+            'name' => sanitizeInput($data['customer']['name']),
+            'email' => sanitizeInput($data['customer']['email']),
+            'phone' => sanitizeInput($data['customer']['phone']),
+            'address' => sanitizeInput($data['customer']['address'])
+        ]);
         
         // 2. 注文を作成
-        $orderId = saveOrder($pdo, $orderNumber, $customerId);
+        $stmt = $pdo->prepare('
+            INSERT INTO orders (id, order_number, customer_id, status, created_at, updated_at)
+            VALUES (:id, :order_number, :customer_id, :status, NOW(), NOW())
+        ');
+        $stmt->execute([
+            'id' => $orderId,
+            'order_number' => $orderNumber,
+            'customer_id' => $customerId,
+            'status' => 'pending'
+        ]);
         
         // 3. 注文詳細を保存
-        saveOrderDetails($pdo, $orderId, $data['order_details']);
+        $quantity = (int)$data['order_details']['quantity'];
+        $unitPrice = (float)$data['order_details']['price'];
+        $totalPrice = $quantity * $unitPrice;
+        
+        $stmt = $pdo->prepare('
+            INSERT INTO order_details (
+                id, order_id, customer_id, product_size, base_design, 
+                quantity, price, unit_price, total_price,
+                image_path, image_data, image_rotation, image_scale
+            ) VALUES (
+                :id, :order_id, :customer_id, :product_size, :base_design,
+                :quantity, :price, :unit_price, :total_price,
+                :image_path, :image_data, :image_rotation, :image_scale
+            )
+        ');
+        $stmt->execute([
+            'id' => $orderDetailsId,
+            'order_id' => $orderId,
+            'customer_id' => $customerId,
+            'product_size' => sanitizeInput($data['order_details']['product_size']),
+            'base_design' => sanitizeInput($data['order_details']['base_design'] ?? 'default'),
+            'quantity' => $quantity,
+            'price' => $unitPrice,
+            'unit_price' => $unitPrice,
+            'total_price' => $totalPrice,
+            'image_path' => isset($data['order_details']['image_path']) ? sanitizeInput($data['order_details']['image_path']) : null,
+            'image_data' => isset($data['order_details']['image_data']) ? $data['order_details']['image_data'] : null,
+            'image_rotation' => isset($data['order_details']['image_rotation']) ? (int)$data['order_details']['image_rotation'] : 0,
+            'image_scale' => isset($data['order_details']['image_scale']) ? (int)$data['order_details']['image_scale'] : 100
+        ]);
         
         // 4. 支払い情報を保存
         $paymentData = isset($data['payment']) ? $data['payment'] : [
             'payment_status' => 'pending',
-            'amount' => $data['order_details']['price'] * $data['order_details']['quantity']
+            'amount' => $totalPrice
         ];
-        savePayment($pdo, $orderId, $paymentData);
+        
+        $stmt = $pdo->prepare('
+            INSERT INTO payments (id, order_id, payment_method, payment_status, transaction_id, amount, created_at)
+            VALUES (:id, :order_id, :payment_method, :payment_status, :transaction_id, :amount, NOW())
+        ');
+        $stmt->execute([
+            'id' => $paymentId,
+            'order_id' => $orderId,
+            'payment_method' => $paymentData['payment_method'] ?? 'PayPay',
+            'payment_status' => sanitizeInput($paymentData['payment_status'] ?? 'pending'),
+            'transaction_id' => isset($paymentData['transaction_id']) ? sanitizeInput($paymentData['transaction_id']) : null,
+            'amount' => (float)($paymentData['amount'] ?? $totalPrice)
+        ]);
         
         // 5. 分析データを保存
-        saveAnalytics($pdo, $orderId, $data['analytics']);
+        $stmt = $pdo->prepare('
+            INSERT INTO order_analytics (
+                id, order_id, device_type, browser, session_duration, 
+                referrer, pages_viewed, created_at
+            ) VALUES (
+                :id, :order_id, :device_type, :browser, :session_duration,
+                :referrer, :pages_viewed, NOW()
+            )
+        ');
+        $stmt->execute([
+            'id' => $analyticsId,
+            'order_id' => $orderId,
+            'device_type' => isset($data['analytics']['device_type']) ? sanitizeInput($data['analytics']['device_type']) : null,
+            'browser' => isset($data['analytics']['browser']) ? substr(sanitizeInput($data['analytics']['browser']), 0, 255) : null,
+            'session_duration' => isset($data['analytics']['session_duration']) ? (int)$data['analytics']['session_duration'] : null,
+            'referrer' => isset($data['analytics']['referrer']) ? substr(sanitizeInput($data['analytics']['referrer']), 0, 500) : null,
+            'pages_viewed' => isset($data['analytics']['pages_viewed']) ? (int)$data['analytics']['pages_viewed'] : null
+        ]);
         
         // トランザクションをコミット
         $pdo->commit();
@@ -117,19 +206,14 @@ function createOrder() {
 
 /**
  * 注文状態を取得する (GET)
- * 
- * order_number が指定されている場合は単一の注文を返す
- * 指定されていない場合は全注文一覧を返す（管理者向け）
  */
 function getOrderStatus() {
-    // クエリパラメータから注文番号を取得
     $orderNumber = isset($_GET['order_number']) ? sanitizeInput($_GET['order_number']) : null;
     
     $pdo = getDbConnection();
     
     // 単一注文の取得
     if ($orderNumber) {
-        // 注文情報を取得
         $stmt = $pdo->prepare('
             SELECT 
                 o.id,
@@ -141,7 +225,8 @@ function getOrderStatus() {
                 c.email as customer_email,
                 od.product_size,
                 od.quantity,
-                od.price,
+                od.unit_price as price,
+                od.total_price,
                 p.payment_status,
                 p.amount as payment_amount
             FROM orders o
@@ -165,21 +250,18 @@ function getOrderStatus() {
     }
     
     // 全注文一覧の取得（管理者向け）
-    // フィルタリングオプション
     $status = isset($_GET['status']) ? sanitizeInput($_GET['status']) : null;
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
     $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
     
-    // クエリ構築
     $whereClause = '';
     $params = [];
     
-    if ($status && in_array($status, ['pending', 'processing', 'completed', 'cancelled'])) {
+    if ($status && in_array($status, ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'])) {
         $whereClause = 'WHERE o.status = :status';
         $params['status'] = $status;
     }
     
-    // 注文一覧を取得
     $sql = "
         SELECT 
             o.id,
@@ -189,10 +271,12 @@ function getOrderStatus() {
             o.updated_at,
             c.name as customer_name,
             c.email as customer_email,
+            c.phone as customer_phone,
             od.product_size as size,
             od.base_design as base_type,
             od.quantity,
-            od.price,
+            od.unit_price as price,
+            od.total_price,
             od.image_path,
             p.payment_status,
             p.amount as total_price
@@ -235,15 +319,11 @@ function getOrderStatus() {
 
 /**
  * 注文番号を生成 (AS-YYYYMMDD-XXXX形式)
- * 
- * @param PDO $pdo データベース接続
- * @return string 注文番号
  */
 function generateOrderNumber($pdo) {
     $date = date('Ymd');
     $prefix = "AS-{$date}-";
     
-    // 今日の注文数を取得
     $stmt = $pdo->prepare('
         SELECT COUNT(*) as count 
         FROM orders 
@@ -253,135 +333,7 @@ function generateOrderNumber($pdo) {
     $result = $stmt->fetch();
     $count = $result['count'] + 1;
     
-    // 4桁のシーケンス番号
     $sequence = str_pad($count, 4, '0', STR_PAD_LEFT);
     
     return $prefix . $sequence;
-}
-
-/**
- * 顧客情報を保存
- * 
- * @param PDO $pdo データベース接続
- * @param array $customer 顧客情報
- * @return int 顧客ID
- */
-function saveCustomer($pdo, $customer) {
-    $stmt = $pdo->prepare('
-        INSERT INTO customers (name, email, phone, address, created_at)
-        VALUES (:name, :email, :phone, :address, NOW())
-    ');
-    
-    $stmt->execute([
-        'name' => sanitizeInput($customer['name']),
-        'email' => sanitizeInput($customer['email']),
-        'phone' => sanitizeInput($customer['phone']),
-        'address' => sanitizeInput($customer['address'])
-    ]);
-    
-    return $pdo->lastInsertId();
-}
-
-/**
- * 注文を保存
- * 
- * @param PDO $pdo データベース接続
- * @param string $orderNumber 注文番号
- * @param int $customerId 顧客ID
- * @return int 注文ID
- */
-function saveOrder($pdo, $orderNumber, $customerId) {
-    $stmt = $pdo->prepare('
-        INSERT INTO orders (order_number, customer_id, status, created_at, updated_at)
-        VALUES (:order_number, :customer_id, :status, NOW(), NOW())
-    ');
-    
-    $stmt->execute([
-        'order_number' => $orderNumber,
-        'customer_id' => $customerId,
-        'status' => 'pending'
-    ]);
-    
-    return $pdo->lastInsertId();
-}
-
-/**
- * 注文詳細を保存
- * 
- * @param PDO $pdo データベース接続
- * @param int $orderId 注文ID
- * @param array $details 注文詳細
- */
-function saveOrderDetails($pdo, $orderId, $details) {
-    $stmt = $pdo->prepare('
-        INSERT INTO order_details (
-            order_id, product_size, base_design, quantity, price, 
-            image_path, image_data, created_at
-        ) VALUES (
-            :order_id, :product_size, :base_design, :quantity, :price,
-            :image_path, :image_data, NOW()
-        )
-    ');
-    
-    $stmt->execute([
-        'order_id' => $orderId,
-        'product_size' => sanitizeInput($details['product_size']),
-        'base_design' => sanitizeInput($details['base_design']),
-        'quantity' => (int)$details['quantity'],
-        'price' => (float)$details['price'],
-        'image_path' => isset($details['image_path']) ? sanitizeInput($details['image_path']) : null,
-        'image_data' => isset($details['image_data']) ? $details['image_data'] : null
-    ]);
-}
-
-/**
- * 支払い情報を保存
- * 
- * @param PDO $pdo データベース接続
- * @param int $orderId 注文ID
- * @param array $payment 支払い情報
- */
-function savePayment($pdo, $orderId, $payment) {
-    $stmt = $pdo->prepare('
-        INSERT INTO payments (
-            order_id, payment_status, transaction_id, amount, created_at
-        ) VALUES (
-            :order_id, :payment_status, :transaction_id, :amount, NOW()
-        )
-    ');
-    
-    $stmt->execute([
-        'order_id' => $orderId,
-        'payment_status' => sanitizeInput($payment['payment_status']),
-        'transaction_id' => isset($payment['transaction_id']) ? sanitizeInput($payment['transaction_id']) : null,
-        'amount' => (float)$payment['amount']
-    ]);
-}
-
-/**
- * 分析データを保存
- * 
- * @param PDO $pdo データベース接続
- * @param int $orderId 注文ID
- * @param array $analytics 分析データ
- */
-function saveAnalytics($pdo, $orderId, $analytics) {
-    $stmt = $pdo->prepare('
-        INSERT INTO order_analytics (
-            order_id, device_type, browser, session_duration, 
-            referrer, pages_viewed, created_at
-        ) VALUES (
-            :order_id, :device_type, :browser, :session_duration,
-            :referrer, :pages_viewed, NOW()
-        )
-    ');
-    
-    $stmt->execute([
-        'order_id' => $orderId,
-        'device_type' => isset($analytics['device_type']) ? sanitizeInput($analytics['device_type']) : null,
-        'browser' => isset($analytics['browser']) ? sanitizeInput($analytics['browser']) : null,
-        'session_duration' => isset($analytics['session_duration']) ? (int)$analytics['session_duration'] : null,
-        'referrer' => isset($analytics['referrer']) ? sanitizeInput($analytics['referrer']) : null,
-        'pages_viewed' => isset($analytics['pages_viewed']) ? (int)$analytics['pages_viewed'] : null
-    ]);
 }

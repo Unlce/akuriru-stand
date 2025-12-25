@@ -26,11 +26,11 @@ try {
         sendErrorResponse('order_id と status は必須です');
     }
     
-    $orderId = (int)$data['order_id'];
+    $orderId = sanitizeInput($data['order_id']);
     $status = sanitizeInput($data['status']);
     
-    // ステータス値の検証
-    $validStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+    // ステータス値の検証（データベースのENUM値に合わせる）
+    $validStatuses = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
     if (!in_array($status, $validStatuses)) {
         sendErrorResponse('無効なステータスです');
     }

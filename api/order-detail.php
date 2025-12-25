@@ -13,10 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 try {
-    // 注文IDを取得
-    $orderId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+    // 注文IDを取得（UUID文字列）
+    $orderId = isset($_GET['id']) ? sanitizeInput($_GET['id']) : null;
     
-    if (!$orderId) {
+    if (!$orderId || strlen($orderId) < 10) {
         sendErrorResponse('注文IDが指定されていません');
     }
     
