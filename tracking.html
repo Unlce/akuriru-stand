@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注文追跡 - アクリルスタンド工房</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tracking-container {
+            max-width: 800px;
+            margin: 4rem auto;
+            padding: 2rem;
+        }
+
+        .tracking-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .tracking-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tracking-search {
+            background: var(--glass-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: var(--color-accent);
+            transform: translateY(-2px);
+        }
+
+        .tracking-result {
+            display: none;
+            background: var(--glass-bg);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .tracking-result.show {
+            display: block;
+        }
+
+        .order-info {
+            margin-bottom: 2rem;
+        }
+
+        .order-info h2 {
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--color-text-light);
+        }
+
+        .info-value {
+            font-weight: 500;
+        }
+
+        .status-timeline {
+            margin: 2rem 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            bottom: -25px;
+            width: 2px;
+            background: var(--glass-border);
+        }
+
+        .timeline-item:last-child::before {
+            display: none;
+        }
+
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 3px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+            z-index: 1;
+        }
+
+        .timeline-icon.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-top: 0.25rem;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+        }
+
+        .timeline-desc {
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            margin-top: 0.5rem;
+        }
+
+        .tracking-link {
+            background: var(--color-accent);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .tracking-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            color: #d32f2f;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid var(--glass-border);
+            border-top: 4px solid var(--color-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="tracking-container">
+        <div class="tracking-header">
+            <h1>📦 注文追跡</h1>
+            <p>注文番号またはメールアドレスを入力してください</p>
+        </div>
+
+        <div class="tracking-search">
+            <form id="tracking-form" class="search-form">
+                <input 
+                    type="text" 
+                    id="tracking-input" 
+                    class="search-input" 
+                    placeholder="注文番号 (例: AS-20240101-0001) またはメールアドレス"
+                    required
+                >
+                <button type="submit" class="search-button">追跡する</button>
+            </form>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>検索中...</p>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+
+        <div id="tracking-result" class="tracking-result">
+            <div class="order-info">
+                <h2>注文情報</h2>
+                <div class="info-row">
+                    <span class="info-label">注文番号:</span>
+                    <span class="info-value" id="order-number">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">注文日:</span>
+                    <span class="info-value" id="order-date">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">お客様名:</span>
+                    <span class="info-value" id="customer-name">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">商品:</span>
+                    <span class="info-value" id="product-info">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">数量:</span>
+                    <span class="info-value" id="quantity">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">合計金額:</span>
+                    <span class="info-value" id="total-price">-</span>
+                </div>
+            </div>
+
+            <div class="status-timeline">
+                <h2>配送状況</h2>
+                
+                <div class="timeline-item">
+                    <div class="timeline-icon" id="status-pending">📝</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">注文受付</div>
+                        <div class="timeline-date" id="date-pending">-</div>
+                        <div class="timeline-desc">ご注文を受け付けました</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon" id="status-paid">💳</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">決済確認</div>
+                        <div class="timeline-date" id="date-paid">-</div>
+                        <div class="timeline-desc">お支払いを確認しました</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon" id="status-processing">🔧</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">製造中</div>
+                        <div class="timeline-date" id="date-processing">-</div>
+                        <div class="timeline-desc">製造を開始しました</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon" id="status-shipped">🚚</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">発送完了</div>
+                        <div class="timeline-date" id="date-shipped">-</div>
+                        <div class="timeline-desc" id="shipping-info">配送業者に商品を引き渡しました</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon" id="status-completed">✅</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">配送完了</div>
+                        <div class="timeline-date" id="date-completed">-</div>
+                        <div class="timeline-desc">お届け完了</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tracking-link-container" style="display: none;">
+                <div class="tracking-link">
+                    <a href="#" id="carrier-tracking-link" target="_blank">配送業者サイトで詳細を確認</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const trackingForm = document.getElementById('tracking-form');
+        const trackingInput = document.getElementById('tracking-input');
+        const trackingResult = document.getElementById('tracking-result');
+        const errorMessage = document.getElementById('error-message');
+        const loading = document.getElementById('loading');
+
+        const shippingCompanies = {
+            'yamato': {
+                name: 'ヤマト運輸',
+                url: 'https://toi.kuronekoyamato.co.jp/cgi-bin/tneko?number='
+            },
+            'sagawa': {
+                name: '佐川急便',
+                url: 'https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do?okurijoNo='
+            },
+            'yupack': {
+                name: '日本郵便（ゆうパック）',
+                url: 'https://trackings.post.japanpost.jp/services/srv/search/?requestNo1='
+            },
+            'japanpost': {
+                name: '日本郵便',
+                url: 'https://trackings.post.japanpost.jp/services/srv/search/?requestNo1='
+            }
+        };
+
+        trackingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = trackingInput.value.trim();
+            if (!query) return;
+
+            // Show loading
+            loading.classList.add('show');
+            errorMessage.classList.remove('show');
+            trackingResult.classList.remove('show');
+
+            try {
+                const response = await fetch(`api/order-detail.php?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                loading.classList.remove('show');
+
+                if (!data.success || !data.order) {
+                    showError(data.error || '注文が見つかりませんでした');
+                    return;
+                }
+
+                displayOrder(data.order);
+
+            } catch (error) {
+                loading.classList.remove('show');
+                showError('エラーが発生しました。もう一度お試しください。');
+                console.error('Tracking error:', error);
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function displayOrder(order) {
+            // Order info
+            document.getElementById('order-number').textContent = order.order_number;
+            document.getElementById('order-date').textContent = formatDate(order.created_at);
+            document.getElementById('customer-name').textContent = order.customer_name;
+            
+            const sizeNames = {
+                'card': 'カードサイズ',
+                'postcard': 'はがきサイズ',
+                'a5': 'A5サイズ',
+                'a4': 'A4サイズ'
+            };
+            document.getElementById('product-info').textContent = 'アクリルスタンド (' + (sizeNames[order.size] || order.size) + ')';
+            document.getElementById('quantity').textContent = order.quantity + '個';
+            document.getElementById('total-price').textContent = '¥' + (order.total_price || order.price || 0).toLocaleString();
+
+            // Update timeline
+            updateTimeline(order);
+
+            // Show tracking link if available
+            if (order.tracking_number && order.shipping_company) {
+                showTrackingLink(order.tracking_number, order.shipping_company);
+            } else {
+                document.getElementById('tracking-link-container').style.display = 'none';
+            }
+
+            trackingResult.classList.add('show');
+        }
+
+        function updateTimeline(order) {
+            const statuses = ['pending', 'paid', 'processing', 'shipped', 'completed'];
+            const currentIndex = statuses.indexOf(order.status);
+
+            statuses.forEach((status, index) => {
+                const icon = document.getElementById(`status-${status}`);
+                const dateElement = document.getElementById(`date-${status}`);
+
+                if (index <= currentIndex) {
+                    icon.classList.add('active');
+                    
+                    if (status === 'pending') {
+                        dateElement.textContent = formatDate(order.created_at);
+                    } else if (status === 'shipped' && order.shipped_at) {
+                        dateElement.textContent = formatDate(order.shipped_at);
+                    } else if (index <= currentIndex) {
+                        dateElement.textContent = '✓ 完了';
+                    }
+                } else {
+                    icon.classList.remove('active');
+                    dateElement.textContent = '未完了';
+                }
+            });
+
+            // Update shipping info
+            if (order.tracking_number) {
+                const companyName = shippingCompanies[order.shipping_company]?.name || order.shipping_company;
+                document.getElementById('shipping-info').textContent = 
+                    `${companyName} (追跡番号: ${order.tracking_number})`;
+            }
+        }
+
+        function showTrackingLink(trackingNumber, shippingCompany) {
+            const company = shippingCompanies[shippingCompany];
+            if (!company) {
+                document.getElementById('tracking-link-container').style.display = 'none';
+                return;
+            }
+
+            const link = document.getElementById('carrier-tracking-link');
+            link.href = company.url + trackingNumber;
+            link.textContent = `${company.name}のサイトで詳細を確認`;
+            document.getElementById('tracking-link-container').style.display = 'block';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

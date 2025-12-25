@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メンテナンス中 | アクリルスタンドクリエイター</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .maintenance-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .maintenance-container {
+            max-width: 700px;
+        }
+
+        .maintenance-icon {
+            font-size: 6rem;
+            margin-bottom: 2rem;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .maintenance-title {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .maintenance-message {
+            font-size: 1.2rem;
+            color: var(--color-text);
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        .maintenance-details {
+            font-size: 1rem;
+            color: var(--color-text-light);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .maintenance-info {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .info-value {
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+
+        .maintenance-contact {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(255, 182, 193, 0.1));
+            border: 2px solid var(--color-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .maintenance-contact h3 {
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .maintenance-contact p {
+            color: var(--color-text-light);
+            margin: 0;
+        }
+
+        .maintenance-contact a {
+            color: var(--color-primary);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .maintenance-title {
+                font-size: 2rem;
+            }
+
+            .maintenance-message {
+                font-size: 1.1rem;
+            }
+
+            .maintenance-info {
+                padding: 1.5rem;
+            }
+
+            .info-row {
+                flex-direction: column;
+                align-items: start;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-page">
+        <div class="maintenance-container">
+            <div class="maintenance-icon">🔧</div>
+            <h1 class="maintenance-title">メンテナンス中</h1>
+            <p class="maintenance-message">
+                ただいまメンテナンス作業を実施しております。<br>
+                ご不便をおかけして申し訳ございません。
+            </p>
+            <p class="maintenance-details">
+                システムの改善・アップデートのため、一時的にサービスを停止しております。<br>
+                作業完了までしばらくお待ちください。
+            </p>
+
+            <div class="maintenance-info">
+                <div class="info-row">
+                    <span class="info-label">メンテナンス開始:</span>
+                    <span class="info-value">2024年12月25日 02:00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">メンテナンス終了予定:</span>
+                    <span class="info-value">2024年12月25日 06:00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">作業内容:</span>
+                    <span class="info-value">システムアップデート</span>
+                </div>
+            </div>
+
+            <div class="maintenance-contact">
+                <h3>緊急のお問い合わせ</h3>
+                <p>
+                    メンテナンス時間外でも緊急のご用件がある場合は、<br>
+                    <a href="mailto:support@acrylic-stand-creator.com">support@acrylic-stand-creator.com</a><br>
+                    までご連絡ください。
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -160,77 +160,130 @@ class OrderManager {
     async submitOrder() {
         console.log('[Payment] submitOrder called');
         
+        // Check network status
+        if (window.networkMonitor && !window.networkMonitor.checkConnection()) {
+            window.toastManager.error('インターネット接続がありません。接続を確認してください。');
+            return;
+        }
+
         // Get form data
         const customerName = document.getElementById('customer-name').value;
         const customerEmail = document.getElementById('customer-email').value;
         const customerPhone = document.getElementById('customer-phone').value;
         const customerAddress = document.getElementById('customer-address').value;
+        const customerPostalCode = document.getElementById('customer-postal-code')?.value || '';
+        const specialRequest = document.getElementById('special-request')?.value || '';
 
         console.log('[Payment] Form data:', { customerName, customerEmail, customerPhone });
 
         // Validate form
         if (!customerName || !customerEmail || !customerPhone || !customerAddress) {
-            alert('すべての項目を入力してください。');
+            window.toastManager.warning('すべての必須項目を入力してください。');
             return;
         }
 
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(customerEmail)) {
-            alert('有効なメールアドレスを入力してください。');
+            window.toastManager.warning('有効なメールアドレスを入力してください。');
             return;
         }
 
         // Phone validation (Japanese format)
-        // Accepts formats like: 03-1234-5678, 090-1234-5678, 0312345678, etc.
         const phoneRegex = /^[\d\-\(\)\s]{10,}$/;
         if (!phoneRegex.test(customerPhone) || customerPhone.replace(/\D/g, '').length < 10) {
-            alert('有効な電話番号を入力してください（10桁以上の数字）。');
+            window.toastManager.warning('有効な電話番号を入力してください（10桁以上の数字）。');
             return;
         }
 
-        // Disable submit button
-        const submitBtn = document.querySelector('#payment-form button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '処理中...';
+        // Get payment method
+        const paymentMethod = this.getSelectedPaymentMethod();
+        if (!paymentMethod) {
+            window.toastManager.warning('お支払い方法を選択してください。');
+            return;
+        }
+
+        // Prepare order data for confirmation
+        const imageData = window.imageEditor.getImageData();
+        const orderData = {
+            name: customerName,
+            email: customerEmail,
+            phone: customerPhone,
+            address: customerAddress,
+            postalCode: customerPostalCode,
+            baseType: window.imageEditor.getBaseType(),
+            size: this.selectedSize,
+            quantity: this.quantity,
+            price: this.selectedPrice,
+            totalPrice: this.selectedPrice * this.quantity,
+            paymentMethod: paymentMethod,
+            specialRequest: specialRequest,
+            imagePreview: imageData
+        };
+
+        // Show confirmation modal
+        window.orderConfirmationModal.show(
+            orderData,
+            () => this.confirmAndSubmit(orderData, imageData),
+            () => {
+                window.toastManager.info('注文内容を修正してください。');
+            }
+        );
+    }
+
+    async confirmAndSubmit(orderData, imageData) {
+        // Show loading
+        window.loadingManager.show('注文を処理中...');
+
+        // Mark session as having changes
+        if (window.sessionProtector) {
+            window.sessionProtector.markAsChanged();
+        }
+
+        // Mark session as having changes
+        if (window.sessionProtector) {
+            window.sessionProtector.markAsChanged();
         }
 
         try {
             // Upload image first
             let imagePath = null;
-            const imageData = window.imageEditor.getImageData();
             
             console.log('[Payment] Image data obtained, length:', imageData ? imageData.length : 0);
             
             if (imageData) {
                 console.log('[Payment] Starting image upload...');
+                window.loadingManager.show('画像をアップロード中...');
                 imagePath = await this.uploadImage(imageData);
                 console.log('[Payment] Image upload completed, path:', imagePath);
             }
 
             // Collect analytics data
+            window.loadingManager.show('注文データを準備中...');
             const analytics = this.collectAnalyticsData();
             console.log('[Payment] Analytics data collected:', analytics);
 
             // Create order object for API
-            const orderData = {
+            const apiOrderData = {
                 customer: {
-                    name: customerName,
-                    email: customerEmail,
-                    phone: customerPhone,
-                    address: customerAddress
+                    name: orderData.name,
+                    email: orderData.email,
+                    phone: orderData.phone,
+                    address: orderData.address,
+                    postal_code: orderData.postalCode
                 },
                 order_details: {
                     product_size: this.selectedSize,
-                    base_design: window.imageEditor.getBaseType(),
+                    base_design: orderData.baseType,
                     quantity: this.quantity,
                     price: this.selectedPrice,
                     image_path: imagePath,
-                    image_data: imageData
+                    image_data: imageData,
+                    special_request: orderData.specialRequest
                 },
                 payment: {
                     payment_status: 'pending',
+                    payment_method: orderData.paymentMethod,
                     amount: this.selectedPrice * this.quantity
                 },
                 analytics: analytics
@@ -238,93 +291,91 @@ class OrderManager {
 
             // Submit order to backend API
             console.log('[Payment] Submitting order to backend API...');
-            const result = await this.submitToBackend(orderData);
+            window.loadingManager.show('注文を送信中...');
+            const result = await this.submitToBackend(apiOrderData);
 
             if (result.success) {
                 console.log('[Payment] Order submitted successfully:', result);
                 
-                // Add to gallery
-                if (window.galleryManager) {
-                    window.galleryManager.addItem({
-                        imageData: imageData,
-                        size: this.selectedSize,
-                        baseType: window.imageEditor.getBaseType()
-                    });
+                // Mark as saved
+                if (window.sessionProtector) {
+                    window.sessionProtector.markAsSaved();
                 }
 
-                // Hide payment modal
-                window.ModalManager.hide('payment-modal');
+                window.toastManager.success('注文が正常に送信されました！', '成功');
 
-                // Show success modal
-                window.ModalManager.show('success-modal');
+                // Check if payment integration is enabled
+                const paymentMethod = orderData.paymentMethod;
+                
+                if (paymentMethod === 'credit' || paymentMethod === 'paypay') {
+                    console.log('[Payment] Initiating payment with:', paymentMethod);
+                    window.loadingManager.show('決済ページに移動中...');
+                    await this.initiatePayment(result.order_id, paymentMethod);
+                } else {
+                    // No payment integration - show success directly
+                    window.loadingManager.hide();
+                    
+                    // Add to gallery
+                    if (window.galleryManager) {
+                        window.galleryManager.addItem({
+                            imageData: imageData,
+                            size: this.selectedSize,
+                            baseType: orderData.baseType
+                        });
+                    }
 
-                console.log('Order submitted successfully:', result);
+                    // Hide payment modal
+                    window.ModalManager.hide('payment-modal');
+
+                    // Show success modal
+                    window.ModalManager.show('success-modal');
+                    
+                    window.toastManager.success(`注文番号: ${result.order_id}`, '注文完了');
+                }
+
             } else {
                 throw new Error(result.error || '注文の送信に失敗しました');
             }
 
         } catch (error) {
             console.error('[Payment] Order submission error:', error);
-            console.error('[Payment] Error type:', error.name);
-            console.error('[Payment] Error message:', error.message);
+            window.loadingManager.hide();
             
             // Provide more detailed error messages to users
-            let userMessage = '注文を保存しました（オフラインモード）。後ほど管理者が確認します。';
+            let userMessage = '注文の送信に失敗しました。';
+            let shouldFallback = false;
             
             if (error.message.includes('HTTP 405')) {
-                userMessage = 'APIエンドポイントへのアクセスに問題があります。オフラインモードで注文を保存しました。';
-                console.error('[Payment] HTTP 405 error - Method not allowed. Check API endpoint configuration.');
+                userMessage = 'サーバーとの通信に問題が発生しました。';
+                shouldFallback = true;
             } else if (error.message.includes('HTTP 404')) {
-                userMessage = 'APIが見つかりません。オフラインモードで注文を保存しました。';
-                console.error('[Payment] HTTP 404 error - API endpoint not found.');
+                userMessage = 'サーバーが見つかりません。';
+                shouldFallback = true;
             } else if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-                userMessage = 'ネットワークエラーが発生しました。オフラインモードで注文を保存しました。';
-                console.error('[Payment] Network error - Could not connect to API.');
+                userMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+                shouldFallback = true;
             }
             
-            // Fallback to localStorage if API fails
-            const fallbackOrder = {
-                id: `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-                imageData: window.imageEditor.getImageData(),
-                size: this.selectedSize,
-                baseType: window.imageEditor.getBaseType(),
-                quantity: this.quantity,
-                price: this.selectedPrice,
-                totalPrice: this.selectedPrice * this.quantity,
-                customer: {
-                    name: customerName,
-                    email: customerEmail,
-                    phone: customerPhone,
-                    address: customerAddress
-                },
-                createdAt: new Date().toISOString(),
-                status: 'pending'
-            };
+            window.toastManager.error(userMessage + ' もう一度お試しください。', 'エラー');
             
-            this.saveToLocalStorage(fallbackOrder);
-            console.log('[Payment] Order saved to localStorage:', fallbackOrder.id);
-            
-            // Add to gallery
-            if (window.galleryManager) {
-                window.galleryManager.addItem({
-                    imageData: fallbackOrder.imageData,
-                    size: fallbackOrder.size,
-                    baseType: fallbackOrder.baseType
-                });
-            }
-
-            // Hide payment modal
-            window.ModalManager.hide('payment-modal');
-
-            // Show success modal
-            window.ModalManager.show('success-modal');
-
-            alert(userMessage);
-        } finally {
-            // Re-enable submit button
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '注文を確定する';
+            if (shouldFallback) {
+                // Fallback to localStorage if API fails
+                const fallbackOrder = {
+                    id: `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+                    imageData: imageData,
+                    size: this.selectedSize,
+                    baseType: orderData.baseType,
+                    quantity: this.quantity,
+                    price: this.selectedPrice,
+                    totalPrice: this.selectedPrice * this.quantity,
+                    customer: orderData,
+                    createdAt: new Date().toISOString(),
+                    status: 'pending'
+                };
+                
+                this.saveToLocalStorage(fallbackOrder);
+                console.log('[Payment] Order saved to localStorage:', fallbackOrder.id);
+                window.toastManager.info('注文をローカルに保存しました。後ほど再送信してください。', 'オフライン保存');
             }
         }
     }
@@ -426,6 +477,104 @@ class OrderManager {
             referrer: referrer,
             pages_viewed: this.pagesViewed
         };
+    }
+
+    /**
+     * Get selected payment method from form
+     */
+    getSelectedPaymentMethod() {
+        const paymentMethodInput = document.querySelector('input[name="payment-method"]:checked');
+        return paymentMethodInput ? paymentMethodInput.value : null;
+    }
+
+    /**
+     * Initiate payment with selected provider
+     */
+    async initiatePayment(orderId, paymentMethod) {
+        try {
+            const totalAmount = this.selectedPrice * this.quantity;
+            
+            console.log('[Payment] Creating payment session...');
+            const response = await fetch('api/create-payment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    amount: totalAmount,
+                    payment_method: paymentMethod,
+                    currency: 'jpy'
+                })
+            });
+
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || '決済セッションの作成に失敗しました');
+            }
+
+            console.log('[Payment] Payment session created:', result.payment_data);
+
+            if (paymentMethod === 'stripe') {
+                // Redirect to Stripe Checkout
+                if (result.payment_data.checkout_url) {
+                    window.location.href = result.payment_data.checkout_url;
+                } else if (window.Stripe && result.payment_data.public_key) {
+                    // Use Stripe.js for embedded checkout
+                    const stripe = window.Stripe(result.payment_data.public_key);
+                    await stripe.redirectToCheckout({
+                        sessionId: result.payment_data.session_id
+                    });
+                }
+            } else if (paymentMethod === 'paypay') {
+                // Redirect to PayPay or show QR code
+                if (result.payment_data.deeplink) {
+                    // Try to open PayPay app
+                    window.location.href = result.payment_data.deeplink;
+                    
+                    // Fallback to QR code display after 2 seconds
+                    setTimeout(() => {
+                        this.showPayPayQRCode(result.payment_data);
+                    }, 2000);
+                } else if (result.payment_data.payment_url) {
+                    window.location.href = result.payment_data.payment_url;
+                }
+            }
+
+        } catch (error) {
+            console.error('[Payment] Payment initiation error:', error);
+            alert('決済の開始に失敗しました: ' + error.message);
+            
+            // Re-enable submit button
+            const submitBtn = document.querySelector('#payment-form button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '注文を確定';
+            }
+        }
+    }
+
+    /**
+     * Show PayPay QR code modal
+     */
+    showPayPayQRCode(paymentData) {
+        // Create QR code modal (simplified - in production use QR code library)
+        const modal = document.createElement('div');
+        modal.className = 'paypay-qr-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>PayPay QRコード</h3>
+                <p>PayPayアプリでこのQRコードをスキャンしてください</p>
+                <div class="qr-code-placeholder">
+                    <p>QR Code: ${paymentData.session_id}</p>
+                    <p><a href="${paymentData.payment_url}" target="_blank">PayPayで支払う</a></p>
+                </div>
+                <p class="qr-expires">有効期限: ${new Date(paymentData.expires_at * 1000).toLocaleString('ja-JP')}</p>
+                <button onclick="this.parentElement.parentElement.remove()">閉じる</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
     /**

@@ -1,0 +1,79 @@
+# Docker 無視ファイル
+# Dockerイメージに含めないファイル・ディレクトリ
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# ドキュメント（イメージサイズ削減）
+README.md
+docs/
+*.md
+
+# 環境変数ファイル（機密情報）
+.env
+.env.local
+.env.*.local
+.env.gcp
+.env.lolipop
+
+# ログファイル
+*.log
+logs/
+
+# 一時ファイル
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE設定
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*~
+
+# Node.js（フロントエンドビルド用、もし使う場合）
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Composer（PHP依存関係、必要に応じてコメント解除）
+# vendor/
+# composer.lock
+
+# テスト関連
+tests/
+*.test.php
+phpunit.xml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker関連
+docker-compose*.yml
+Dockerfile.dev
+.dockerignore
+
+# アップロードファイル（開発用、本番では永続化）
+uploads/*
+!uploads/.htaccess
+!uploads/htaccess
+
+# データベースファイル
+*.sql
+*.sqlite
+database/backups/
+
+# キャッシュ
+cache/
+.cache/
+
+# ビルド成果物
+dist/
+build/

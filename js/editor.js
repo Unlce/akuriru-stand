@@ -20,21 +20,83 @@ class ImageEditor {
         this.decorationManager = null;
         this.croppingTool = null;
         this.baseEditor = null;
-        this.currentMode = 'basic'; // 'basic', 'cropping', 'base'
+        this.filterManager = null;
+        this.currentMode = 'basic'; // 'basic', 'filters', 'cropping', 'base'
         this.init();
     }
 
     init() {
         this.canvas = document.getElementById('preview-canvas');
         if (this.canvas) {
-            this.ctx = this.canvas.getContext('2d');
+            this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
         }
 
         this.setupEventListeners();
         this.initDecorations();
         this.initCroppingTool();
         this.initBaseEditor();
+        this.initFilters();
         this.initEditorModes();
+        
+        // Try to restore previous session
+        this.checkForSavedSession();
+    }
+
+    /**
+     * Check for saved session and prompt to restore
+     */
+    checkForSavedSession() {
+        setTimeout(() => {
+            if (window.sessionProtector) {
+                const saved = window.sessionProtector.showRestorePrompt();
+                if (saved && saved.imageData) {
+                    // Restore the session
+                    const img = new Image();
+                    img.onload = () => {
+                        this.image = img;
+                        this.rotation = saved.rotation || 0;
+                        this.scale = saved.scale || 1;
+                        this.baseType = saved.baseType || 'default';
+                        this.render();
+                        this.showEditor();
+                        window.toastManager.success('前回のセッションを復元しました', '復元完了');
+                        window.sessionProtector.markAsSaved();
+                    };
+                    img.src = saved.imageData;
+                }
+            }
+        }, 1000);
+    }
+
+    /**
+     * Show quality warning in editor
+     */
+    showQualityWarning(warnings) {
+        const editorSection = document.getElementById('editor-section');
+        if (!editorSection) return null;
+        
+        // Remove any existing warnings
+        const existingWarning = editorSection.querySelector('.quality-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+        
+        // Create new warning
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'quality-warning';
+        warningDiv.innerHTML = `
+            <div class="quality-warning-icon">⚠️</div>
+            <div class="quality-warning-content">
+                <div class="quality-warning-title">画質に関する警告</div>
+                <div class="quality-warning-message">${warnings.join('<br>')}</div>
+            </div>
+            <button class="quality-warning-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        // Insert at the top of editor section
+        editorSection.insertBefore(warningDiv, editorSection.firstChild);
+        
+        return warningDiv;
     }
 
     setupEventListeners() {
@@ -48,11 +110,34 @@ class ImageEditor {
         }
 
         if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
+            fileInput.addEventListener('change', async (e) => {
                 console.log('[Editor] File input change event triggered');
                 if (e.target.files && e.target.files[0]) {
                     console.log('[Editor] File selected:', e.target.files[0].name);
+                    
+                    // Quality check
+                    if (window.imageQualityChecker) {
+                        const file = e.target.files[0];
+                        const qualityResults = await window.imageQualityChecker.check(file);
+                        
+                        if (qualityResults.errors.length > 0) {
+                            window.toastManager.error(qualityResults.errors.join('<br>'), 'ファイルエラー');
+                            return;
+                        }
+                        
+                        if (qualityResults.warnings.length > 0) {
+                            const warningDiv = this.showQualityWarning(qualityResults.warnings);
+                            // Still allow loading the image, but show warning
+                            window.toastManager.warning(qualityResults.warnings[0], '画質警告');
+                        }
+                    }
+                    
                     this.loadImage(e.target.files[0]);
+                    
+                    // Mark session as changed
+                    if (window.sessionProtector) {
+                        window.sessionProtector.markAsChanged();
+                    }
                 }
             });
         }
@@ -68,16 +153,36 @@ class ImageEditor {
                 uploadArea.classList.remove('drag-over');
             });
 
-            uploadArea.addEventListener('drop', (e) => {
+            uploadArea.addEventListener('drop', async (e) => {
                 e.preventDefault();
                 uploadArea.classList.remove('drag-over');
                 
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                     const file = e.dataTransfer.files[0];
-                    if (EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
-                        this.loadImage(file);
-                    } else {
-                        alert('JPG、PNG、GIF形式の画像ファイルを選択してください。');
+                    if (!EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
+                        window.toastManager.warning('JPG、PNG、GIF、WEBP形式の画像ファイルを選択してください。');
+                        return;
+                    }
+                    
+                    // Quality check
+                    if (window.imageQualityChecker) {
+                        const qualityResults = await window.imageQualityChecker.check(file);
+                        
+                        if (qualityResults.errors.length > 0) {
+                            window.toastManager.error(qualityResults.errors.join('<br>'), 'ファイルエラー');
+                            return;
+                        }
+                        
+                        if (qualityResults.warnings.length > 0) {
+                            window.toastManager.warning(qualityResults.warnings[0], '画質警告');
+                        }
+                    }
+                    
+                    this.loadImage(file);
+                    
+                    // Mark session as changed
+                    if (window.sessionProtector) {
+                        window.sessionProtector.markAsChanged();
                     }
                 }
             });
@@ -149,22 +254,40 @@ class ImageEditor {
         // Validate file size
         if (file.size > EDITOR_CONFIG.MAX_FILE_SIZE) {
             alert(`ファイルサイズは${EDITOR_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB以下にしてください。`);
+            console.error('[Editor] File too large:', file.size);
             return;
         }
 
         // Validate file type
         if (!EDITOR_CONFIG.ACCEPTED_TYPES.includes(file.type)) {
             alert('JPG、PNG、GIF、WEBP形式の画像ファイルを選択してください。');
+            console.error('[Editor] Invalid file type:', file.type);
             return;
         }
 
         console.log('[Editor] File validation passed, reading file...');
         const reader = new FileReader();
+        
+        reader.onerror = (error) => {
+            console.error('[Editor] FileReader error:', error);
+            alert('ファイルの読み込みに失敗しました。');
+        };
+        
         reader.onload = (e) => {
-            console.log('[Editor] File loaded, creating image object...');
+            console.log('[Editor] File loaded, data URL length:', e.target.result.length);
+            console.log('[Editor] Creating image object...');
             const img = new Image();
+            
+            img.onerror = (error) => {
+                console.error('[Editor] Image load error:', error);
+                alert('画像の読み込みに失敗しました。');
+            };
+            
             img.onload = () => {
                 console.log('[Editor] Image loaded successfully:', img.width, 'x', img.height);
+                console.log('[Editor] Canvas element:', this.canvas);
+                console.log('[Editor] Context:', this.ctx);
+                
                 this.image = img;
                 this.rotation = 0;
                 this.scale = 1;
@@ -174,18 +297,25 @@ class ImageEditor {
                 const scaleSlider = document.getElementById('scale-slider');
                 if (scaleSlider) {
                     scaleSlider.value = 100;
+                    console.log('[Editor] Scale slider reset');
                 }
                 const scaleValue = document.getElementById('scale-value');
                 if (scaleValue) {
                     scaleValue.textContent = '100%';
                 }
 
+                console.log('[Editor] Calling render()...');
                 this.render();
+                console.log('[Editor] Calling showEditor()...');
                 this.showEditor();
                 console.log('[Editor] Image rendering complete');
             };
+            
+            console.log('[Editor] Setting image src...');
             img.src = e.target.result;
         };
+        
+        console.log('[Editor] Starting to read file as DataURL...');
         reader.readAsDataURL(file);
     }
 
@@ -239,6 +369,12 @@ class ImageEditor {
 
         // Restore context state
         this.ctx.restore();
+        
+        // Apply filters after rendering if filter manager exists and has active filter
+        if (this.filterManager && this.filterManager.currentFilter !== 'none') {
+            const currentFilter = this.filterManager.currentFilter;
+            this.filterManager.applyFilter(currentFilter);
+        }
 
         // If cropping mode is active, render cropping overlay
         if (this.croppingTool && this.croppingTool.isActive) {
@@ -254,14 +390,37 @@ class ImageEditor {
     }
 
     showEditor() {
+        console.log('[Editor] showEditor called');
         const uploadSection = document.querySelector('.upload-section');
         const editorSection = document.getElementById('editor-section');
+        const previewPlaceholder = document.getElementById('preview-placeholder');
+        const standWrapper = document.getElementById('stand-wrapper');
+        
+        console.log('[Editor] Elements:', { uploadSection, editorSection, previewPlaceholder, standWrapper });
         
         if (uploadSection) {
             uploadSection.style.display = 'none';
+            console.log('[Editor] Upload section hidden');
         }
         if (editorSection) {
             editorSection.style.display = 'block';
+            console.log('[Editor] Editor section displayed');
+        }
+        
+        // Show the stand preview and hide placeholder
+        if (previewPlaceholder) {
+            previewPlaceholder.style.display = 'none';
+            console.log('[Editor] Placeholder hidden');
+        }
+        if (standWrapper) {
+            standWrapper.style.display = 'block';
+            console.log('[Editor] Stand wrapper displayed');
+        }
+        
+        // Re-setup filter controls to ensure they're bound after image is loaded
+        if (this.filterManager) {
+            this.setupFilterControls();
+            console.log('[Editor] Filter controls re-initialized after image load');
         }
     }
 
@@ -274,6 +433,8 @@ class ImageEditor {
         const uploadSection = document.querySelector('.upload-section');
         const editorSection = document.getElementById('editor-section');
         const fileInput = document.getElementById('file-input');
+        const previewPlaceholder = document.getElementById('preview-placeholder');
+        const standWrapper = document.getElementById('stand-wrapper');
 
         if (uploadSection) {
             uploadSection.style.display = 'block';
@@ -283,6 +444,14 @@ class ImageEditor {
         }
         if (fileInput) {
             fileInput.value = '';
+        }
+        
+        // Hide the stand preview and show placeholder
+        if (previewPlaceholder) {
+            previewPlaceholder.style.display = 'block';
+        }
+        if (standWrapper) {
+            standWrapper.style.display = 'none';
         }
 
         // Reset controls
@@ -310,6 +479,11 @@ class ImageEditor {
     }
 
     getImageData() {
+        if (!this.canvas || !this.ctx) return null;
+        return this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    }
+    
+    getImageDataURL() {
         if (!this.canvas) return null;
         return this.canvas.toDataURL('image/png');
     }
@@ -553,14 +727,14 @@ class ImageEditor {
      */
     getFinalImageWithDecorations() {
         if (!this.canvas || !this.decorationManager) {
-            return this.getImageData();
+            return this.getImageDataURL();
         }
 
         // 新しいキャンバスを作成して統合
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = this.canvas.width;
         finalCanvas.height = this.canvas.height;
-        const finalCtx = finalCanvas.getContext('2d');
+        const finalCtx = finalCanvas.getContext('2d', { willReadFrequently: true });
 
         // ベース画像を描画
         finalCtx.drawImage(this.canvas, 0, 0);
@@ -626,21 +800,29 @@ class ImageEditor {
      * Setup cropping tool controls
      */
     setupCroppingControls() {
+        console.log('[Editor] Setting up cropping controls...');
+
         // Tool selection
         const toolButtons = document.querySelectorAll('.crop-tool-btn');
+        const brushSizeControl = document.getElementById('brush-size-control');
+        const cropHint = document.getElementById('crop-hint');
+        
         toolButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 toolButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const tool = btn.dataset.tool;
+                console.log('[Editor] Tool selected:', tool);
+                
                 if (this.croppingTool) {
                     this.croppingTool.setTool(tool);
-                    
-                    // Show/hide polygon complete button
-                    const completeBtn = document.getElementById('crop-complete-polygon-btn');
-                    if (completeBtn) {
-                        completeBtn.style.display = tool === 'polygon' ? 'block' : 'none';
-                    }
+                }
+                
+                // Show/hide brush size control
+                if (tool === 'freehand') {
+                    if (brushSizeControl) brushSizeControl.style.display = 'block';
+                } else {
+                    if (brushSizeControl) brushSizeControl.style.display = 'none';
                 }
             });
         });
@@ -658,64 +840,42 @@ class ImageEditor {
             });
         }
 
-        // Undo/Redo buttons
-        const undoBtn = document.getElementById('crop-undo-btn');
-        const redoBtn = document.getElementById('crop-redo-btn');
-        if (undoBtn) {
-            undoBtn.addEventListener('click', () => {
+        // Cancel button
+        const cancelBtn = document.getElementById('crop-cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                console.log('[Editor] Cancel button clicked');
                 if (this.croppingTool) {
-                    this.croppingTool.undo();
-                    this.render();
+                    this.croppingTool.deactivate();
                 }
-            });
-        }
-        if (redoBtn) {
-            redoBtn.addEventListener('click', () => {
-                if (this.croppingTool) {
-                    this.croppingTool.redo();
-                    this.render();
-                }
-            });
-        }
-
-        // Complete polygon button
-        const completePolygonBtn = document.getElementById('crop-complete-polygon-btn');
-        if (completePolygonBtn) {
-            completePolygonBtn.addEventListener('click', () => {
-                if (this.croppingTool) {
-                    this.croppingTool.completePolygon();
-                }
-            });
-        }
-
-        // Reset button
-        const resetBtn = document.getElementById('crop-reset-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                if (this.croppingTool) {
-                    this.croppingTool.reset();
-                    this.render();
-                }
+                this.switchMode('basic');
             });
         }
 
         // Apply crop button
         const applyBtn = document.getElementById('crop-apply-btn');
         if (applyBtn) {
-            applyBtn.addEventListener('click', async () => {
+            applyBtn.addEventListener('click', () => {
+                console.log('[Editor] Apply button clicked');
+                
                 if (this.croppingTool && this.croppingTool.isActive) {
-                    const croppedImage = await this.croppingTool.applyCrop();
-                    if (croppedImage) {
-                        // Load the cropped image
-                        const img = new Image();
-                        img.onload = () => {
-                            this.image = img;
-                            this.croppingTool.deactivate();
-                            this.switchMode('basic');
-                            this.render();
-                        };
-                        img.src = croppedImage;
-                    }
+                    this.croppingTool.applyCrop((url) => {
+                        if (url) {
+                            const img = new Image();
+                            img.onload = () => {
+                                this.image = img;
+                                this.croppingTool.deactivate();
+                                this.switchMode('basic');
+                                this.render();
+                                URL.revokeObjectURL(url);
+                                console.log('[Editor] Crop applied successfully');
+                            };
+                            img.onerror = (err) => {
+                                console.error('[Editor] Failed to load cropped image:', err);
+                            };
+                            img.src = url;
+                        }
+                    });
                 }
             });
         }
@@ -725,6 +885,9 @@ class ImageEditor {
      * Initialize base editor
      */
     initBaseEditor() {
+        // Temporarily disabled - using predefined base styles from CSS instead
+        // Custom base editor can be re-enabled in future versions
+        /*
         const initBase = () => {
             if (window.BaseEditor) {
                 this.baseEditor = new BaseEditor('.stand-base');
@@ -734,6 +897,174 @@ class ImageEditor {
             }
         };
         initBase();
+        */
+    }
+
+    /**
+     * Initialize image filters
+     */
+    initFilters() {
+        const initFilters = () => {
+            if (window.ImageFilters && this.canvas && this.ctx) {
+                this.filterManager = new ImageFilters(this.canvas, this.ctx);
+                // Delay filter controls setup to ensure DOM is ready
+                setTimeout(() => {
+                    this.setupFilterControls();
+                    console.log('[Editor] Filters initialized and controls setup');
+                }, 500);
+            } else {
+                setTimeout(initFilters, 100);
+            }
+        };
+        initFilters();
+    }
+
+    /**
+     * Setup filter controls
+     */
+    setupFilterControls() {
+        console.log('[Editor] Setting up filter controls...');
+        
+        // Preset filter buttons
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        console.log('[Editor] Found', filterButtons.length, 'filter buttons');
+        
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+                console.log('[Editor] Filter button clicked:', filter);
+                
+                // Update active state
+                filterButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                console.log('[Editor] Active class updated');
+                
+                // Apply filter
+                if (this.filterManager) {
+                    console.log('[Editor] Applying filter via filterManager...');
+                    // Save original image data if not already saved
+                    if (!this.filterManager.originalImageData) {
+                        this.filterManager.saveOriginalImageData();
+                        console.log('[Editor] Original image data saved');
+                    }
+                    // Apply filter
+                    this.filterManager.applyFilter(filter);
+                    console.log('[Editor] Filter applied:', filter);
+                } else {
+                    console.error('[Editor] filterManager not initialized!');
+                }
+            });
+        });
+
+        // Brightness slider
+        const brightnessSlider = document.getElementById('brightness-slider');
+        const brightnessValue = document.getElementById('brightness-value');
+        if (brightnessSlider && brightnessValue) {
+            brightnessSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                brightnessValue.textContent = value;
+                if (this.filterManager) {
+                    this.filterManager.applyAdjustment('brightness', value);
+                }
+            });
+        }
+
+        // Contrast slider
+        const contrastSlider = document.getElementById('contrast-slider');
+        const contrastValue = document.getElementById('contrast-value');
+        if (contrastSlider && contrastValue) {
+            contrastSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                contrastValue.textContent = value;
+                if (this.filterManager) {
+                    this.filterManager.applyAdjustment('contrast', value);
+                }
+            });
+        }
+
+        // Saturation slider
+        const saturationSlider = document.getElementById('saturation-slider');
+        const saturationValue = document.getElementById('saturation-value');
+        if (saturationSlider && saturationValue) {
+            saturationSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                saturationValue.textContent = value;
+                if (this.filterManager) {
+                    this.filterManager.applyAdjustment('saturation', value);
+                }
+            });
+        }
+
+        // Blur slider
+        const blurSlider = document.getElementById('blur-slider');
+        const blurValue = document.getElementById('blur-value');
+        if (blurSlider && blurValue) {
+            blurSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                blurValue.textContent = value;
+                if (this.filterManager) {
+                    this.filterManager.applyAdjustment('blur', value);
+                }
+            });
+        }
+
+        // Background removal button
+        const removeBgBtn = document.getElementById('remove-bg-btn');
+        if (removeBgBtn) {
+            removeBgBtn.addEventListener('click', () => {
+                if (this.filterManager) {
+                    this.filterManager.smartRemoveBackground();
+                }
+            });
+        }
+
+        // Filter reset button
+        const filterResetBtn = document.getElementById('filter-reset-btn');
+        if (filterResetBtn) {
+            filterResetBtn.addEventListener('click', () => {
+                console.log('[Editor] Filter reset button clicked');
+                
+                if (this.filterManager) {
+                    // Reset filter manager
+                    this.filterManager.reset();
+                    this.filterManager.currentFilter = 'none';
+                    this.filterManager.adjustments = {
+                        brightness: 0,
+                        contrast: 0,
+                        saturation: 0,
+                        blur: 0
+                    };
+                    console.log('[Editor] Filter manager reset');
+                }
+                
+                // Re-render the original image
+                this.render();
+                console.log('[Editor] Image re-rendered');
+                
+                // Reset sliders
+                if (brightnessSlider) brightnessSlider.value = 0;
+                if (contrastSlider) contrastSlider.value = 0;
+                if (saturationSlider) saturationSlider.value = 0;
+                if (blurSlider) blurSlider.value = 0;
+                
+                // Reset value displays
+                if (brightnessValue) brightnessValue.textContent = '0';
+                if (contrastValue) contrastValue.textContent = '0';
+                if (saturationValue) saturationValue.textContent = '0';
+                if (blurValue) blurValue.textContent = '0';
+                
+                // Reset active filter button to 'none'
+                filterButtons.forEach(b => {
+                    if (b.dataset.filter === 'none') {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+                
+                console.log('[Editor] All filter controls reset');
+            });
+        }
     }
 
     /**
@@ -904,10 +1235,12 @@ class ImageEditor {
 
         // Show/hide panels
         const basicPanel = document.getElementById('basic-editing-panel');
+        const filtersPanel = document.getElementById('filters-panel');
         const croppingPanel = document.getElementById('cropping-panel');
         const basePanel = document.getElementById('base-editor-panel');
 
         if (basicPanel) basicPanel.classList.remove('active');
+        if (filtersPanel) filtersPanel.classList.remove('active');
         if (croppingPanel) croppingPanel.classList.remove('active');
         if (basePanel) basePanel.classList.remove('active');
 
@@ -932,9 +1265,21 @@ class ImageEditor {
             }
         }
 
+        // Save original image data when entering filters mode
+        if (mode === 'filters' && this.filterManager && this.image) {
+            this.filterManager.saveOriginalImageData();
+        }
+
         // Show appropriate panel
         if (mode === 'basic' && basicPanel) {
             basicPanel.classList.add('active');
+        } else if (mode === 'filters' && filtersPanel) {
+            if (!this.image) {
+                alert('画像をアップロードしてからフィルターを使用してください');
+                this.switchMode('basic');
+                return;
+            }
+            filtersPanel.classList.add('active');
         } else if (mode === 'cropping' && croppingPanel) {
             if (!this.image) {
                 alert('画像をアップロードしてから切り抜きツールを使用してください');

@@ -1,0 +1,137 @@
+# GitHub Actions - コード品質チェック
+
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ===================================
+  # PHP 構文チェック
+  # ===================================
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Validate PHP syntax
+        run: |
+          echo "Checking PHP files..."
+          find . -name "*.php" -not -path "./vendor/*" -print0 | \
+            xargs -0 -n1 php -l
+          echo "✓ All PHP files are valid"
+
+  # ===================================
+  # JavaScript 構文チェック
+  # ===================================
+  js-lint:
+    name: JavaScript Syntax Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Validate JavaScript syntax
+        run: |
+          echo "Checking JavaScript files..."
+          for file in $(find js -name "*.js"); do
+            node --check "$file"
+          done
+          echo "✓ All JavaScript files are valid"
+
+  # ===================================
+  # セキュリティチェック
+  # ===================================
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded credentials..."
+          
+          # パスワードパターンをチェック
+          if grep -r "password.*=" api/ --include="*.php" | grep -v "DB_PASS" | grep -v "getenv"; then
+            echo "⚠️  Potential hardcoded password found"
+            exit 1
+          fi
+          
+          # API キーパターンをチェック
+          if grep -rE "(api_key|apikey|secret_key).*=.*['\"][a-zA-Z0-9]{20,}" . --include="*.php" --include="*.js"; then
+            echo "⚠️  Potential hardcoded API key found"
+            exit 1
+          fi
+          
+          echo "✓ No hardcoded secrets detected"
+
+      - name: Check file permissions
+        run: |
+          echo "Checking sensitive file permissions..."
+          
+          # .env ファイルが Git に含まれていないことを確認
+          if git ls-files | grep -q "^\.env$"; then
+            echo "⚠️  .env file is tracked by Git"
+            exit 1
+          fi
+          
+          echo "✓ File permissions check passed"
+
+  # ===================================
+  # Docker イメージビルドテスト
+  # ===================================
+  docker-build-test:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: acrylic-stand:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run -d --name test-container \
+            -e APP_ENV=local \
+            -e DEBUG_MODE=true \
+            acrylic-stand:test
+          
+          sleep 5
+          
+          # ヘルスチェック
+          docker exec test-container curl -f http://localhost/health.php || exit 1
+          
+          echo "✓ Docker image test passed"
+          
+          docker stop test-container

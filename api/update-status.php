@@ -55,7 +55,7 @@ try {
         'order_id' => $orderId
     ]);
 
-    $emailStatus = ['subcontract_email_sent' => false];
+    $emailStatus = ['subcontract_email_sent' => false, 'shipping_notification_sent' => false];
 
     // 決済確認後、下請けに自動通知
     if ($status === 'paid') {
@@ -63,6 +63,15 @@ try {
             $emailStatus['subcontract_email_sent'] = sendSubcontractEmail($orderSummary);
         } catch (Throwable $e) {
             error_log('Subcontract email failed: ' . $e->getMessage());
+        }
+    }
+
+    // 発送完了後、顧客に通知
+    if ($status === 'shipped') {
+        try {
+            $emailStatus['shipping_notification_sent'] = sendShippingNotificationEmail($orderSummary);
+        } catch (Throwable $e) {
+            error_log('Shipping notification failed: ' . $e->getMessage());
         }
     }
     
@@ -169,4 +178,120 @@ function buildSubcontractBody(array $order) {
     ];
 
     return implode("\n", $lines);
+}
+
+// 発送通知メール送信
+function sendShippingNotificationEmail(array $order) {
+    $customerEmail = $order['customer_email'] ?? '';
+    if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+        error_log('Shipping notification skipped: invalid customer email');
+        return false;
+    }
+
+    $fromEmail = defined('SHOP_FROM_EMAIL') ? SHOP_FROM_EMAIL : '';
+    $fromEmail = filter_var($fromEmail, FILTER_VALIDATE_EMAIL) ? $fromEmail : 'noreply@example.com';
+
+    $headers = 'From: アクリルスタンド工房 <' . $fromEmail . ">\r\n" . 'Reply-To: ' . $fromEmail;
+
+    if (function_exists('mb_language')) {
+        mb_language('Japanese');
+    }
+    if (function_exists('mb_internal_encoding')) {
+        mb_internal_encoding('UTF-8');
+    }
+
+    $subject = '【発送完了】ご注文商品を発送いたしました - 注文番号: ' . ($order['order_number'] ?? $order['id']);
+    $body = buildShippingNotificationBody($order);
+
+    $success = false;
+    if (function_exists('mb_send_mail')) {
+        $success = mb_send_mail($customerEmail, $subject, $body, $headers);
+    } else {
+        $success = mail($customerEmail, $subject, $body, $headers);
+    }
+
+    if ($success) {
+        error_log('Shipping notification sent to: ' . $customerEmail);
+    } else {
+        error_log('Failed to send shipping notification to: ' . $customerEmail);
+    }
+
+    return $success;
+}
+
+// 発送通知メール本文生成
+function buildShippingNotificationBody(array $order) {
+    $sizeLabels = [
+        'card' => 'カードサイズ',
+        'postcard' => 'はがきサイズ',
+        'a5' => 'A5サイズ',
+        'a4' => 'A4サイズ'
+    ];
+
+    $shippingCompanies = [
+        'yamato' => 'ヤマト運輸',
+        'sagawa' => '佐川急便',
+        'yupack' => '日本郵便（ゆうパック）',
+        'japanpost' => '日本郵便'
+    ];
+
+    $trackingUrls = [
+        'yamato' => 'https://toi.kuronekoyamato.co.jp/cgi-bin/tneko?number=',
+        'sagawa' => 'https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do?okurijoNo=',
+        'yupack' => 'https://trackings.post.japanpost.jp/services/srv/search/?requestNo1=',
+        'japanpost' => 'https://trackings.post.japanpost.jp/services/srv/search/?requestNo1='
+    ];
+
+    $siteUrl = getenv('SITE_URL') ?: 'https://example.com';
+    $trackingPageUrl = $siteUrl . '/tracking.html?order=' . urlencode($order['order_number'] ?? $order['id']);
+
+    $body = $order['customer_name'] . " 様\n\n";
+    $body .= "いつもアクリルスタンド工房をご利用いただきありがとうございます。\n\n";
+    $body .= "ご注文いただきました商品を発送いたしましたのでお知らせいたします。\n\n";
+    $body .= "══════════════════════════════\n";
+    $body .= "■ 注文情報\n";
+    $body .= "══════════════════════════════\n";
+    $body .= "注文番号: " . ($order['order_number'] ?? $order['id']) . "\n";
+    $body .= "注文日時: " . ($order['created_at'] ?? '') . "\n";
+    $body .= "商品: アクリルスタンド - " . ($sizeLabels[$order['product_size']] ?? $order['product_size']) . "\n";
+    $body .= "数量: " . ($order['quantity'] ?? 1) . "個\n";
+    $body .= "金額: ¥" . number_format($order['total_price'] ?? 0) . "\n\n";
+
+    // 配送情報を追加
+    if (!empty($order['tracking_number'])) {
+        $companyName = $shippingCompanies[$order['shipping_company'] ?? ''] ?? ($order['shipping_company'] ?? '配送業者');
+        $trackingUrl = '';
+        if (isset($trackingUrls[$order['shipping_company'] ?? ''])) {
+            $trackingUrl = $trackingUrls[$order['shipping_company']] . $order['tracking_number'];
+        }
+
+        $body .= "══════════════════════════════\n";
+        $body .= "■ 配送情報\n";
+        $body .= "══════════════════════════════\n";
+        $body .= "配送会社: " . $companyName . "\n";
+        $body .= "追跡番号: " . $order['tracking_number'] . "\n\n";
+
+        if ($trackingUrl) {
+            $body .= "配送状況の確認:\n" . $trackingUrl . "\n\n";
+        }
+    }
+
+    $body .= "当サイトでの追跡:\n" . $trackingPageUrl . "\n\n";
+    $body .= "══════════════════════════════\n";
+    $body .= "配送先住所\n";
+    $body .= "══════════════════════════════\n";
+    $body .= ($order['customer_address'] ?? '') . "\n\n";
+    $body .= "お届けまでしばらくお待ちください。\n";
+    $body .= "商品到着後、何か問題がございましたら\n";
+    $body .= "お気軽にお問い合わせください。\n\n";
+    $body .= "今後ともアクリルスタンド工房を\n";
+    $body .= "よろしくお願いいたします。\n\n";
+    $body .= "══════════════════════════════\n";
+    $body .= "アクリルスタンド工房\n";
+
+    if (defined('SHOP_ADMIN_EMAIL')) {
+        $body .= "お問い合わせ: " . SHOP_ADMIN_EMAIL . "\n";
+    }
+
+    return $body;
 }

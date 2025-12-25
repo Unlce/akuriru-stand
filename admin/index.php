@@ -47,8 +47,55 @@ $isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'
 <?php else: ?>
     <div class="container">
         <div class="header">
-            <h1>Admin Panel</h1>
+            <h1>🎨 アクリルスタンド工房 - 管理画面</h1>
             <a href="?logout=1" class="btn btn-secondary">Logout</a>
+        </div>
+
+        <!-- 統計ダッシュボード -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <h3>📊 総注文数</h3>
+                <div class="stat-value" id="totalOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>💰 総売上</h3>
+                <div class="stat-value" id="totalRevenue">¥0</div>
+            </div>
+            <div class="stat-card">
+                <h3>📦 処理中</h3>
+                <div class="stat-value" id="pendingOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>✅ 完了</h3>
+                <div class="stat-value" id="completedOrders">0</div>
+            </div>
+        </div>
+        
+        <!-- フィルター・検索 -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>📅 期間</label>
+                <input type="date" id="dateFrom" class="filter-input">
+                <span>～</span>
+                <input type="date" id="dateTo" class="filter-input">
+            </div>
+            <div class="filter-group">
+                <label>🔍 検索</label>
+                <input type="text" id="searchInput" placeholder="注文番号、顧客名、メール" class="filter-input">
+            </div>
+            <div class="filter-group">
+                <label>📋 ステータス</label>
+                <select id="statusFilter" class="filter-input">
+                    <option value="">すべて</option>
+                    <option value="pending">新規</option>
+                    <option value="paid">決済確認済</option>
+                    <option value="processing">処理中</option>
+                    <option value="shipped">発送済</option>
+                    <option value="completed">完了</option>
+                    <option value="cancelled">キャンセル</option>
+                </select>
+            </div>
+            <button id="exportCsvBtn" class="btn btn-primary">📥 CSV出力</button>
         </div>
         
         <div id="loading" style="display:none;">Loading...</div>
@@ -57,18 +104,43 @@ $isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'
             <table id="ordersTable">
                 <thead>
                     <tr>
-                        <th>Order Number</th>
-                        <th>Date</th>
-                        <th>Customer</th>
-                        <th>Size</th>
-                        <th>Price</th>
-                        <th>Status</th>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>注文番号</th>
+                        <th>日時</th>
+                        <th>顧客情報</th>
+                        <th>画像</th>
+                        <th>サイズ</th>
+                        <th>数量</th>
+                        <th>金額</th>
+                        <th>ステータス</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="ordersBody">
-                    <tr><td colspan="6">Loading...</td></tr>
+                    <tr><td colspan="10">Loading...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 一括操作 -->
+        <div class="bulk-actions">
+            <label>選択した注文を:</label>
+            <select id="bulkAction" class="filter-input">
+                <option value="">選択してください</option>
+                <option value="paid">決済確認済にする</option>
+                <option value="processing">処理中にする</option>
+                <option value="shipped">発送済にする</option>
+                <option value="completed">完了にする</option>
+            </select>
+            <button id="bulkApplyBtn" class="btn btn-primary">適用</button>
+        </div>
+    </div>
+
+    <!-- 画像プレビューモーダル -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img id="modalImage" src="" alt="Preview">
         </div>
     </div>
 

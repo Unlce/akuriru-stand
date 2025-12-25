@@ -1,0 +1,108 @@
+# Docker Compose 設定ファイル
+# アクリルスタンド工房 - ローカル開発環境
+
+version: '3.8'
+
+services:
+  # PHP + Apache アプリケーションコンテナ
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acrylic-stand-web
+    ports:
+      - "8000:80"
+    volumes:
+      # ソースコードのマウント（ホットリロード対応）
+      - ./:/var/www/html
+      # uploads ディレクトリの永続化
+      - ./uploads:/var/www/html/uploads
+    environment:
+      # アプリケーション設定
+      - APP_ENV=local
+      - DEBUG_MODE=true
+      
+      # データベース設定
+      - DB_HOST=mysql
+      - DB_NAME=acrylic_stand
+      - DB_USER=stand_user
+      - DB_PASS=stand_password
+      - DB_PORT=3306
+      
+      # メール設定（開発環境）
+      - SHOP_ADMIN_EMAIL=admin@localhost
+      - SHOP_FROM_EMAIL=noreply@localhost
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - acrylic-network
+    restart: unless-stopped
+
+  # MySQL データベースコンテナ
+  mysql:
+    image: mysql:8.0
+    container_name: acrylic-stand-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: acrylic_stand
+      MYSQL_USER: stand_user
+      MYSQL_PASSWORD: stand_password
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      # データベースデータの永続化
+      - mysql-data:/var/lib/mysql
+      # 初期化スクリプト
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - acrylic-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # phpMyAdmin（オプション - データベース管理UI）
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: acrylic-stand-phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: stand_user
+      PMA_PASSWORD: stand_password
+      UPLOAD_LIMIT: 10M
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - acrylic-network
+    restart: unless-stopped
+
+  # MailHog（オプション - メール送信テスト用）
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: acrylic-stand-mailhog
+    ports:
+      - "1025:1025"  # SMTP サーバー
+      - "8025:8025"  # Web UI
+    networks:
+      - acrylic-network
+    restart: unless-stopped
+
+# 名前付きボリューム
+volumes:
+  mysql-data:
+    driver: local
+
+# ネットワーク
+networks:
+  acrylic-network:
+    driver: bridge

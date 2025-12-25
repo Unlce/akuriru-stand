@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and API directories
+Disallow: /admin/
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /database/
+
+# Allow specific public pages
+Allow: /index.html
+Allow: /faq.html
+Allow: /contact.html
+Allow: /terms.html
+Allow: /privacy.html
+Allow: /tokushoho.html
+Allow: /tracking.html
+
+# Sitemap location
+Sitemap: https://www.acrylic-stand-creator.com/sitemap.xml
+
+# Crawl delay (optional - 1 second between requests)
+Crawl-delay: 1

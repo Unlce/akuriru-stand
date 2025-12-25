@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - サーバーエラー | アクリルスタンドクリエイター</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .error-container {
+            max-width: 600px;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            color: var(--color-text);
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            font-size: 1.1rem;
+            color: var(--color-text-light);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .error-btn {
+            padding: 0.875rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .error-btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .error-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 25px rgba(168, 85, 247, 0.4);
+        }
+
+        .error-btn-secondary {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            color: var(--color-text);
+        }
+
+        .error-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .error-illustration {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error-details {
+            background: rgba(231, 76, 60, 0.1);
+            border: 2px solid rgba(231, 76, 60, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .error-details h3 {
+            color: #e74c3c;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .error-details p {
+            color: var(--color-text-light);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+            }
+
+            .error-title {
+                font-size: 1.5rem;
+            }
+
+            .error-actions {
+                flex-direction: column;
+            }
+
+            .error-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-container">
+            <div class="error-illustration">⚠️</div>
+            <div class="error-code">500</div>
+            <h1 class="error-title">サーバーエラー</h1>
+            <p class="error-message">
+                申し訳ございません。サーバーで問題が発生しました。<br>
+                しばらく時間をおいてから再度お試しください。
+            </p>
+            <div class="error-actions">
+                <a href="index.html" class="error-btn error-btn-primary">トップページへ</a>
+                <a href="javascript:location.reload()" class="error-btn error-btn-secondary">再読み込み</a>
+            </div>
+            
+            <div class="error-details">
+                <h3>問題が解決しない場合</h3>
+                <p>
+                    問題が継続する場合は、<a href="contact.html" style="color: #e74c3c; text-decoration: underline;">お問い合わせページ</a>からご連絡ください。<br>
+                    状況を確認の上、早急に対応させていただきます。
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

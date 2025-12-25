@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>アクリルスタンド作成サービス | オリジナルグッズを手軽に</title>
     <meta name="description" content="好きな画像でオリジナルアクリルスタンドを作成・注文できるウェブサイト。1個から注文可能、透明感のある美しいデザイン。">
+    <meta name="keywords" content="アクリルスタンド,オリジナルグッズ,カスタムグッズ,写真,イラスト,オーダーメイド,プレゼント,記念品">
+    
+    <!-- OGP Meta Tags -->
+    <meta property="og:title" content="アクリルスタンド作成サービス | オリジナルグッズを手軽に">
+    <meta property="og:description" content="好きな画像でオリジナルアクリルスタンドを作成・注文。1個から注文可能、透明感のある美しいデザイン。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.acrylic-stand-creator.com/">
+    <meta property="og:image" content="https://www.acrylic-stand-creator.com/assets/ogp-image.png">
+    <meta property="og:site_name" content="アクリルスタンドクリエイター">
+    <meta property="og:locale" content="ja_JP">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="アクリルスタンド作成サービス">
+    <meta name="twitter:description" content="好きな画像でオリジナルアクリルスタンドを作成・注文">
+    <meta name="twitter:image" content="https://www.acrylic-stand-creator.com/assets/ogp-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.acrylic-stand-creator.com/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/decorations.css">
     <link rel="stylesheet" href="css/editor.css">
@@ -106,11 +129,20 @@
                 <div id="editor-section" class="editor-section" style="display: none;">
                     <div class="editor-container">
                         <div class="preview-area">
-                            <h3>プレビュー</h3>
+                            <h3>💎 完成イメージ</h3>
                             <div class="acrylic-stand-preview">
-                                <canvas id="preview-canvas"></canvas>
-                                <div class="stand-base">
-                                    <div id="selected-base" class="base-default"></div>
+                                <div class="preview-placeholder" id="preview-placeholder">
+                                    <p>👆 画像をアップロードすると</p>
+                                    <p>完成イメージがここに表示されます</p>
+                                </div>
+                                <div class="stand-wrapper" id="stand-wrapper" style="display: none;">
+                                    <div class="canvas-container">
+                                        <canvas id="preview-canvas"></canvas>
+                                    </div>
+                                    <div class="stand-base">
+                                        <div class="stand-connector"></div>
+                                        <div id="selected-base" class="base-default"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -120,15 +152,10 @@
                             
                             <!-- Editor Mode Tabs -->
                             <div class="editor-mode-tabs">
-                                <button class="editor-mode-tab active" data-mode="basic">
-                                    🖼️ 基本編集
-                                </button>
-                                <button class="editor-mode-tab" data-mode="cropping">
-                                    ✂️ 切り抜き
-                                </button>
-                                <button class="editor-mode-tab" data-mode="base">
-                                    🪑 台座編集
-                                </button>
+                                <button class="editor-mode-tab active" data-mode="basic">基本編集</button>
+                                <button class="editor-mode-tab" data-mode="filters">フィルター</button>
+                                <button class="editor-mode-tab" data-mode="cropping">切り抜き</button>
+                                <button class="editor-mode-tab" data-mode="base">台座編集</button>
                             </div>
 
                             <!-- Basic Editing Panel (existing controls) -->
@@ -150,50 +177,106 @@
                                 <button id="reset-image" class="control-btn secondary">画像をリセット</button>
                             </div>
 
+                            <!-- Filters Panel -->
+                            <div id="filters-panel" class="tool-panel filters-panel">
+                                <div class="tool-panel-content">
+                                    <div class="filter-presets">
+                                        <h4>プリセットフィルター</h4>
+                                        <div class="filter-grid">
+                                            <button class="filter-btn active" data-filter="none">なし</button>
+                                            <button class="filter-btn" data-filter="grayscale">モノクロ</button>
+                                            <button class="filter-btn" data-filter="sepia">セピア</button>
+                                            <button class="filter-btn" data-filter="vintage">ビンテージ</button>
+                                            <button class="filter-btn" data-filter="brighten">明るく</button>
+                                            <button class="filter-btn" data-filter="darken">暗く</button>
+                                            <button class="filter-btn" data-filter="high-contrast">高コントラスト</button>
+                                            <button class="filter-btn" data-filter="blur">ぼかし</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="filter-adjustments">
+                                        <h4>詳細調整</h4>
+                                        
+                                        <div class="adjustment-control">
+                                            <label>
+                                                明るさ: <span id="brightness-value">0</span>
+                                            </label>
+                                            <input type="range" id="brightness-slider" class="adjustment-slider" 
+                                                   min="-100" max="100" value="0" step="1">
+                                        </div>
+
+                                        <div class="adjustment-control">
+                                            <label>
+                                                コントラスト: <span id="contrast-value">0</span>
+                                            </label>
+                                            <input type="range" id="contrast-slider" class="adjustment-slider" 
+                                                   min="-50" max="50" value="0" step="1">
+                                        </div>
+
+                                        <div class="adjustment-control">
+                                            <label>
+                                                彩度: <span id="saturation-value">0</span>
+                                            </label>
+                                            <input type="range" id="saturation-slider" class="adjustment-slider" 
+                                                   min="-50" max="50" value="0" step="1">
+                                        </div>
+
+                                        <div class="adjustment-control">
+                                            <label>
+                                                ぼかし: <span id="blur-value">0</span>
+                                            </label>
+                                            <input type="range" id="blur-slider" class="adjustment-slider" 
+                                                   min="0" max="5" value="0" step="1">
+                                        </div>
+                                    </div>
+
+                                    <div class="background-removal">
+                                        <h4>背景除去</h4>
+                                        <button id="remove-bg-btn" class="control-btn primary">
+                                            🪄 背景を自動除去
+                                        </button>
+                                        <p class="bg-removal-note">※ 白い背景の画像に最適です</p>
+                                    </div>
+
+                                    <div class="filter-actions">
+                                        <button id="filter-reset-btn" class="control-btn secondary">
+                                            🔄 リセット
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Cropping Tools Panel -->
                             <div id="cropping-panel" class="tool-panel cropping-panel">
                                 <div class="tool-panel-content">
-                                    <div class="cropping-tools">
-                                        <button class="crop-tool-btn active" data-tool="freehand">
-                                            <span class="tool-icon">✏️</span>
-                                            <span class="tool-label">自由選択</span>
+                                    <div class="cropping-tools" style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
+                                        <button class="crop-tool-btn active" data-tool="rectangle" style="flex: 1; padding: 0.8rem;">
+                                            矩形選択
                                         </button>
-                                        <button class="crop-tool-btn" data-tool="polygon">
-                                            <span class="tool-icon">⬟</span>
-                                            <span class="tool-label">多角形</span>
-                                        </button>
-                                        <button class="crop-tool-btn" data-tool="eraser">
-                                            <span class="tool-icon">🧹</span>
-                                            <span class="tool-label">消しゴム</span>
+                                        <button class="crop-tool-btn" data-tool="freehand" style="flex: 1; padding: 0.8rem;">
+                                            自由選択
                                         </button>
                                     </div>
+                                    
+                                    <p id="crop-hint" style="text-align: center; margin-bottom: 1rem; font-size: 0.9rem; color: #666;">
+                                        矩形：ドラッグして保持する範囲を選択<br>
+                                        自由：筆で保持する部分を塗る
+                                    </p>
 
-                                    <div class="brush-size-control">
-                                        <label>
-                                            ブラシサイズ: <span id="brush-size-value">20</span>px
+                                    <div class="brush-size-control" id="brush-size-control" style="display: none; margin-bottom: 1rem;">
+                                        <label style="display: block; text-align: center; margin-bottom: 0.5rem;">
+                                            ブラシサイズ: <span id="brush-size-value">30</span>px
                                         </label>
                                         <input type="range" id="brush-size-slider" class="brush-size-slider" 
-                                               min="5" max="100" value="20">
+                                               min="10" max="100" value="30" style="width: 100%;">
                                     </div>
-
-                                    <div class="crop-actions">
-                                        <button id="crop-undo-btn" class="crop-action-btn secondary">
-                                            ↶ 元に戻す
+                                    
+                                    <div class="crop-actions" style="display: flex; gap: 1rem;">
+                                        <button id="crop-cancel-btn" class="crop-action-btn secondary" style="flex: 1;">
+                                            キャンセル
                                         </button>
-                                        <button id="crop-redo-btn" class="crop-action-btn secondary">
-                                            ↷ やり直す
-                                        </button>
-                                    </div>
-
-                                    <div class="crop-actions">
-                                        <button id="crop-complete-polygon-btn" class="crop-action-btn secondary" style="display: none;">
-                                            ✓ 選択完了
-                                        </button>
-                                        <button id="crop-reset-btn" class="crop-action-btn secondary">
-                                            🔄 リセット
-                                        </button>
-                                        <button id="crop-apply-btn" class="crop-action-btn primary">
-                                            ✓ 切り抜き確定
+                                        <button id="crop-apply-btn" class="crop-action-btn primary" style="flex: 1;">
+                                            切り抜き確定
                                         </button>
                                     </div>
                                 </div>
@@ -458,7 +541,7 @@
             </div>
 
             <div class="payment-section">
-                <h3>PayPay決済</h3>
+                <h3>決済方法</h3>
                 <p class="payment-note">※ このサイトが料金を立て替える形式となります</p>
                 
                 <form id="payment-form" class="payment-form">
@@ -482,9 +565,35 @@
                         <textarea id="customer-address" required placeholder="〒123-4567&#10;東京都渋谷区..."></textarea>
                     </div>
 
-                    <div class="paypay-section">
-                        <div class="paypay-logo">PayPay</div>
-                        <p class="paypay-instruction">注文確定後、PayPayアプリで支払いを完了してください</p>
+                    <div class="form-group">
+                        <label>決済方法を選択 <span class="required">*</span></label>
+                        <div class="payment-methods">
+                            <label class="payment-method-option">
+                                <input type="radio" name="payment-method" value="paypay" checked>
+                                <span class="payment-method-label">
+                                    <span class="payment-logo paypay-logo">PayPay</span>
+                                    <span class="payment-desc">QRコード決済</span>
+                                </span>
+                            </label>
+                            <label class="payment-method-option">
+                                <input type="radio" name="payment-method" value="stripe">
+                                <span class="payment-method-label">
+                                    <span class="payment-logo stripe-logo">Stripe</span>
+                                    <span class="payment-desc">クレジットカード</span>
+                                </span>
+                            </label>
+                            <label class="payment-method-option">
+                                <input type="radio" name="payment-method" value="manual">
+                                <span class="payment-method-label">
+                                    <span class="payment-logo">💳</span>
+                                    <span class="payment-desc">後払い（銀行振込）</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="payment-instruction">
+                        <p class="payment-note-text">注文確定後、選択した決済方法でお支払いください</p>
                     </div>
 
                     <button type="submit" class="cta-button">注文を確定する</button>
@@ -528,7 +637,10 @@
                 <div class="footer-section">
                     <h4>法的情報</h4>
                     <ul>
+                        <li><a href="terms.html">利用規約</a></li>
+                        <li><a href="privacy.html">プライバシーポリシー</a></li>
                         <li><a href="tokushoho.html">特定商取引法に基づく表記</a></li>
+                        <li><a href="tracking.html">注文追跡</a></li>
                     </ul>
                 </div>
             </div>
@@ -538,8 +650,11 @@
         </div>
     </footer>
 
+    <script src="js/utils.js" defer></script>
+    <script src="js/order-confirmation.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/decorations.js" defer></script>
+    <script src="js/filters.js" defer></script>
     <script src="js/cropping.js" defer></script>
     <script src="js/base-editor.js" defer></script>
     <script src="js/editor.js" defer></script>

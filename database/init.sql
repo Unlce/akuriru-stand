@@ -28,12 +28,16 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `order_number` VARCHAR(50) NOT NULL UNIQUE COMMENT '注文番号 (AS-YYYYMMDD-XXXX)',
     `customer_id` INT UNSIGNED NOT NULL COMMENT '顧客ID',
-    `status` ENUM('pending', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'pending' COMMENT '注文状態',
+    `status` ENUM('pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'pending' COMMENT '注文状態',
+    `tracking_number` VARCHAR(100) NULL COMMENT '追跡番号',
+    `shipping_company` VARCHAR(50) NULL COMMENT '配送会社 (yamato, sagawa, yupack, etc)',
+    `shipped_at` DATETIME NULL COMMENT '発送日時',
     `created_at` DATETIME NOT NULL COMMENT '作成日時',
     `updated_at` DATETIME NOT NULL COMMENT '更新日時',
     INDEX `idx_order_number` (`order_number`),
     INDEX `idx_customer_id` (`customer_id`),
     INDEX `idx_status` (`status`),
+    INDEX `idx_tracking_number` (`tracking_number`),
     INDEX `idx_created_at` (`created_at`),
     FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='注文主テーブル';
@@ -118,6 +122,25 @@ INSERT INTO `order_analytics` (`order_id`, `device_type`, `browser`, `session_du
 (@order_id, 'desktop', 'Chrome', 300, 5, NOW());
 
 -- ================================
+-- 6. お問い合わせテーブル (contacts)
+-- ================================
+CREATE TABLE IF NOT EXISTS `contacts` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL COMMENT 'お名前',
+    `email` VARCHAR(255) NOT NULL COMMENT 'メールアドレス',
+    `subject` VARCHAR(100) NOT NULL COMMENT 'お問い合わせ種別',
+    `order_number` VARCHAR(50) NULL COMMENT '注文番号（任意）',
+    `message` TEXT NOT NULL COMMENT 'お問い合わせ内容',
+    `status` ENUM('new', 'in_progress', 'resolved', 'closed') NOT NULL DEFAULT 'new' COMMENT '対応状況',
+    `admin_notes` TEXT NULL COMMENT '管理者メモ',
+    `created_at` DATETIME NOT NULL COMMENT '作成日時',
+    `updated_at` DATETIME NULL COMMENT '更新日時',
+    INDEX `idx_email` (`email`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='お問い合わせ';
+
+-- ================================
 -- データベース初期化完了
 -- ================================
 -- 
@@ -127,3 +150,4 @@ INSERT INTO `order_analytics` (`order_id`, `device_type`, `browser`, `session_du
 -- SELECT * FROM order_details;
 -- SELECT * FROM payments;
 -- SELECT * FROM order_analytics;
+-- SELECT * FROM contacts;
