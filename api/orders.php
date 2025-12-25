@@ -263,7 +263,7 @@ function getOrderStatus() {
     }
     
     $sql = "
-        SELECT 
+        SELECT
             o.id,
             o.order_number,
             o.status,
@@ -279,7 +279,7 @@ function getOrderStatus() {
             od.total_price,
             od.image_path,
             p.payment_status,
-            p.amount as total_price
+            p.amount as payment_amount
         FROM orders o
         INNER JOIN customers c ON o.customer_id = c.id
         INNER JOIN order_details od ON o.id = od.order_id
