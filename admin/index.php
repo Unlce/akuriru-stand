@@ -71,53 +71,8 @@ $isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'
             </table>
         </div>
     </div>
-    
-    <script>
-    console.log('Script starting...');
-    
-    var API_BASE = '../api';
-    
-    function loadOrders() {
-        console.log('loadOrders called');
-        var tbody = document.getElementById('ordersBody');
-        
-        fetch(API_BASE + '/orders.php?limit=50&offset=0')
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(data) {
-                console.log('Data received:', data);
-                if (data.success && data.orders) {
-                    var html = '';
-                    for (var i = 0; i < data.orders.length; i++) {
-                        var order = data.orders[i];
-                        html += '<tr>';
-                        html += '<td>' + (order.order_number || order.id) + '</td>';
-                        html += '<td>' + (order.created_at || 'N/A') + '</td>';
-                        html += '<td>' + (order.customer_name || 'N/A') + '<br><small>' + (order.customer_email || '') + '</small></td>';
-                        html += '<td>' + (order.size || 'N/A') + '</td>';
-                        html += '<td>Y' + (order.total_price || order.price || 0) + '</td>';
-                        html += '<td>' + (order.status || 'pending') + '</td>';
-                        html += '</tr>';
-                    }
-                    tbody.innerHTML = html;
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6">No orders</td></tr>';
-                }
-            })
-            .catch(function(error) {
-                console.error('Error:', error);
-                tbody.innerHTML = '<tr><td colspan="6">Error loading orders</td></tr>';
-            });
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM ready, calling loadOrders');
-        loadOrders();
-    });
-    
-    console.log('Script loaded successfully');
-    </script>
+
+    <script src="js/admin.js"></script>
 <?php endif; ?>
 </body>
 </html>
