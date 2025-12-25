@@ -19,6 +19,6 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          remoteDir: /
+          remoteDir: /acrylic-stand/
           localDir: "."
           options: "--delete --verbose --exclude=.git/ --exclude=.github/ --exclude=node_modules/ --exclude=.vscode/ --exclude=admin/"
