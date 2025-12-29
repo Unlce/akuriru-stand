@@ -885,19 +885,17 @@ class ImageEditor {
      * Initialize base editor
      */
     initBaseEditor() {
-        // Temporarily disabled - using predefined base styles from CSS instead
-        // Custom base editor can be re-enabled in future versions
-        /*
         const initBase = () => {
             if (window.BaseEditor) {
                 this.baseEditor = new BaseEditor('.stand-base');
                 this.setupBaseEditorControls();
+                console.log('[Editor] Base editor initialized');
             } else {
+                console.log('[Editor] Waiting for BaseEditor to load...');
                 setTimeout(initBase, 100);
             }
         };
         initBase();
-        */
     }
 
     /**
