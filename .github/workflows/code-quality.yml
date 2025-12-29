@@ -38,7 +38,7 @@ jobs:
   js-lint:
     name: JavaScript Syntax Check
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,6 +55,76 @@ jobs:
             node --check "$file"
           done
           echo "✓ All JavaScript files are valid"
+
+  # ===================================
+  # PHP Unit Tests
+  # ===================================
+  php-tests:
+    name: PHP Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, pdo, pdo_mysql
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run PHP tests
+        run: composer test
+
+      - name: Generate coverage report
+        run: composer test-coverage
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          files: ./coverage/clover.xml
+          flags: php
+          name: php-coverage
+
+  # ===================================
+  # JavaScript Unit Tests
+  # ===================================
+  js-tests:
+    name: JavaScript Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run JavaScript tests
+        run: npm test
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          files: ./coverage/lcov.info
+          flags: javascript
+          name: js-coverage
 
   # ===================================
   # セキュリティチェック
