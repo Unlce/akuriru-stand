@@ -91,7 +91,8 @@ class CroppingTool {
         this.isDrawing = false;
         this.rectStart = null;
         this.rectEnd = null;
-        this.currentPath = [];\n        
+        this.currentPath = [];
+
         // Keep mask as is when switching tools - don't reset
         // User's work is preserved
         
