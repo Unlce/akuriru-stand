@@ -242,7 +242,7 @@ class ModalManager {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize gallery
     window.galleryManager = new GalleryManager();
-    
+
     // Add sample items if gallery is empty (for demonstration)
     window.galleryManager.addSampleItems();
 
@@ -255,3 +255,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Export ModalManager for use in other scripts
     window.ModalManager = ModalManager;
 });
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        GalleryManager,
+        ModalManager,
+        initSmoothScrolling
+    };
+}

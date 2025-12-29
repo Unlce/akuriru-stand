@@ -405,3 +405,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
     console.log('[Utils] Initialized: Toast, Loading, Quality Checker, Session Protector, Network Monitor, Cookie Consent');
 });
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        ToastManager,
+        LoadingManager,
+        ImageQualityChecker,
+        SessionProtector,
+        NetworkMonitor,
+        CookieConsent
+    };
+}

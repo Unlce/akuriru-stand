@@ -1,16 +1,19 @@
 # アクリルスタンド工房 - Docker イメージ
 # PHP 8.1 + Apache + 必要な拡張機能
+# Optimized for Google Cloud Run deployment
 
 FROM php:8.1-apache
 
 # メンテナ情報
 LABEL maintainer="アクリルスタンド工房 <info@zyniqo.co.jp>"
 LABEL description="Acrylic Stand Workshop - PHP Application Container"
+LABEL org.opencontainers.image.source="https://github.com/Unlce/akuriru-stand"
 
 # 環境変数の設定
-ENV APP_ENV=local
-ENV DEBUG_MODE=true
+ENV APP_ENV=production
+ENV DEBUG_MODE=false
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
+ENV PORT=8080
 
 # システムパッケージの更新と必要なツールのインストール
 RUN apt-get update && apt-get install -y \
@@ -96,12 +99,29 @@ RUN sed -i 's|/var/www/html|/var/www/html|g' /etc/apache2/sites-available/000-de
 RUN echo "<?php http_response_code(200); echo json_encode(['status' => 'healthy', 'timestamp' => time()]); ?>" \
     > /var/www/html/health.php
 
-# ポート 80 を公開
-EXPOSE 80
+# Configure Apache for Cloud Run (dynamic port binding)
+RUN sed -i 's/Listen 80/Listen ${PORT}/' /etc/apache2/ports.conf && \
+    sed -i 's/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/' /etc/apache2/sites-available/000-default.conf
+
+# ポート 8080 を公開 (Cloud Run default)
+EXPOSE 8080
 
 # ヘルスチェック
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/health.php || exit 1
+    CMD curl -f http://localhost:${PORT}/health.php || exit 1
 
-# Apache を起動
-CMD ["apache2-foreground"]
+# Startup script to handle dynamic port
+COPY <<EOF /usr/local/bin/start-apache.sh
+#!/bin/bash
+set -e
+# Replace PORT placeholder in Apache config
+sed -i "s/\\\${PORT}/${PORT}/g" /etc/apache2/ports.conf
+sed -i "s/\\\${PORT}/${PORT}/g" /etc/apache2/sites-available/000-default.conf
+# Start Apache
+exec apache2-foreground
+EOF
+
+RUN chmod +x /usr/local/bin/start-apache.sh
+
+# Apache を起動 (with port substitution)
+CMD ["/usr/local/bin/start-apache.sh"]

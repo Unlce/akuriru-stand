@@ -1,11 +1,13 @@
 <?php
 /**
  * Upload API
- * 
+ *
  * 画像ファイルのアップロード処理を行うAPIエンドポイント
+ * Supports both local storage and Google Cloud Storage
  */
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/storage.php';
 
 // アップロード設定
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
@@ -62,43 +64,37 @@ function handleUpload() {
         sendErrorResponse('許可されていないファイル拡張子です');
     }
     
-    // 日付ベースのディレクトリを作成
+    // 日付ベースのディレクトリパスを生成
     $dateDir = date('Y/m/d');
-    $uploadPath = UPLOAD_DIR . $dateDir;
-    
-    if (!file_exists($uploadPath)) {
-        if (!mkdir($uploadPath, 0755, true)) {
-            sendErrorResponse('アップロードディレクトリの作成に失敗しました', 500);
-        }
-    }
-    
+
     // 安全なファイル名を生成
     $safeFilename = generateSafeFilename($extension);
-    $fullPath = $uploadPath . '/' . $safeFilename;
-    
-    // ファイルを移動
-    if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
-        sendErrorResponse('ファイルの保存に失敗しました', 500);
+    $destination = $dateDir . '/' . $safeFilename;
+
+    // 画像情報を取得（アップロード前）
+    $imageInfo = getimagesize($file['tmp_name']);
+
+    // Use storage adapter (local or GCS)
+    $uploadResult = uploadToStorage($file, $destination);
+
+    if (!$uploadResult['success']) {
+        sendErrorResponse($uploadResult['error'] ?: 'ファイルの保存に失敗しました', 500);
     }
-    
-    // 相対パスを生成（Webからアクセス可能）
-    $relativePath = 'uploads/' . $dateDir . '/' . $safeFilename;
-    
-    // 画像情報を取得
-    $imageInfo = getimagesize($fullPath);
-    
+
     // 成功レスポンス
     sendJsonResponse([
         'success' => true,
         'file' => [
-            'path' => $relativePath,
+            'path' => $uploadResult['path'],
+            'url' => $uploadResult['url'],
             'filename' => $safeFilename,
             'size' => $file['size'],
             'mime_type' => $mimeType,
             'width' => $imageInfo[0],
             'height' => $imageInfo[1]
         ],
-        'message' => 'ファイルが正常にアップロードされました'
+        'message' => 'ファイルが正常にアップロードされました',
+        'storage' => useCloudStorage() ? 'gcs' : 'local'
     ], 201);
 }
 

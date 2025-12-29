@@ -1,6 +1,44 @@
 <?php
+/**
+ * Admin Panel
+ *
+ * SECURITY: Set ADMIN_PASSWORD environment variable in production
+ * Example: ADMIN_PASSWORD=your_secure_password_here
+ *
+ * For production use, consider implementing:
+ * - Database-backed user accounts
+ * - Password hashing (password_hash/password_verify)
+ * - Session timeout
+ * - 2FA authentication
+ */
+
 session_start();
-define('ADMIN_PASSWORD', 'admin123');
+
+// Set session timeout (30 minutes of inactivity)
+$sessionTimeout = 1800; // 30 minutes
+if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $sessionTimeout)) {
+    session_unset();
+    session_destroy();
+    header('Location: index.php');
+    exit();
+}
+$_SESSION['last_activity'] = time();
+
+// Get admin password from environment variable
+// IMPORTANT: Change this in production via environment variable
+$adminPassword = getenv('ADMIN_PASSWORD');
+
+if (empty($adminPassword)) {
+    // Development fallback - MUST change in production
+    $adminPassword = 'AkuriruStand2025!@#CHANGE_ME';
+
+    // Warning in development
+    if (getenv('APP_ENV') !== 'production') {
+        error_log('WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable!');
+    }
+}
+
+define('ADMIN_PASSWORD', $adminPassword);
 
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -42,7 +80,11 @@ $isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'
             </div>
             <button type="submit" class="btn">Login</button>
         </form>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">Default: admin123</p>
+        <?php if (getenv('APP_ENV') !== 'production'): ?>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                Development mode: Check environment variables or server logs for default password
+            </p>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="container">
