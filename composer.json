@@ -1,0 +1,26 @@
+{
+    "name": "akuriru-stand/acrylic-stand-workshop",
+    "description": "Acrylic Stand Workshop - Custom acrylic stand ordering system",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "AkuriruStand\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AkuriruStand\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --coverage-html coverage"
+    }
+}
