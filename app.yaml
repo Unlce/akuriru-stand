@@ -1,0 +1,75 @@
+# Google App Engine Configuration
+# For deploying to App Engine Standard or Flexible environment
+#
+# Deploy with: gcloud app deploy
+
+# App Engine Flexible environment (for PHP 7.4+)
+runtime: php81
+env: flex
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 10
+  cpu_utilization:
+    target_utilization: 0.65
+
+# Resource allocation
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
+
+# Environment variables
+# IMPORTANT: Use Secret Manager for sensitive values in production
+env_variables:
+  APP_ENV: "gcp"
+  DEBUG_MODE: "false"
+  USE_CLOUD_STORAGE: "true"
+  GCP_PROJECT_ID: "your-project-id"
+  GCP_REGION: "asia-northeast1"
+
+# Health check configuration
+liveness_check:
+  path: "/health.php"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+readiness_check:
+  path: "/health.php"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
+# Network configuration
+network:
+  session_affinity: false
+
+# Cloud SQL connection
+# Uncomment and configure for your Cloud SQL instance
+# beta_settings:
+#   cloud_sql_instances: "your-project:asia-northeast1:acrylic-stand-db"
+
+# Skip files during deployment
+skip_files:
+  - ^(.*/)?#.*#$
+  - ^(.*/)?.*~$
+  - ^(.*/)?.*\.py[co]$
+  - ^(.*/)?.*/RCS/.*$
+  - ^(.*/)?\..*$
+  - ^(.*/)?.*\.bak$
+  - ^(.*/)?node_modules/.*$
+  - ^(.*/)?tests/.*$
+  - ^(.*/)?\.git/.*$
+  - ^(.*/)?vendor/.*$
+  - ^composer\.(json|lock)$
+  - ^package(-lock)?\.json$
+  - ^\.gitignore$
+  - ^\.github/.*$
+  - ^docker-compose\.yml$
+  - ^Dockerfile$
+  - ^README\.md$
