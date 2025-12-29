@@ -4,17 +4,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Read and evaluate the utils.js file
-const utilsCode = readFileSync(join(__dirname, '../../js/utils.js'), 'utf-8');
-eval(utilsCode);
+// Import utilities from utils.js
+// Note: We need to mock the window object for browser-specific code
+import {
+    ToastManager,
+    LoadingManager,
+    ImageQualityChecker,
+    SessionProtector
+} from '../../js/utils.js';
 
 describe('ToastManager', () => {
   let toastManager;
