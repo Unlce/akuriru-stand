@@ -1,0 +1,153 @@
+# Cloud Run 安全配置 - 防止天价账单
+# Safe Cloud Run Configuration - Cost Protection
+
+# 使用方法:
+# gcloud run services replace cloud-run-safe-config.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: akuriru-stand
+  labels:
+    cloud.googleapis.com/location: asia-northeast1
+  annotations:
+    # 成本控制 - 最重要的设置
+    autoscaling.knative.dev/minScale: "0"     # 无流量时实例数为0（不收费）
+    autoscaling.knative.dev/maxScale: "10"    # 最多10个实例（防止无限扩展）
+
+    # CPU分配 - 节省成本
+    run.googleapis.com/cpu-throttling: "true"  # 请求处理完后节省CPU
+
+    # 描述
+    run.googleapis.com/description: "アクリルスタンド工房 - 成本保护配置"
+
+spec:
+  template:
+    metadata:
+      annotations:
+        # 并发控制
+        autoscaling.knative.dev/maxConcurrency: "80"  # 每个实例最多80个并发请求
+
+        # 扩缩容策略
+        autoscaling.knative.dev/targetConcurrencyUtilization: "0.7"  # 70%时开始扩容
+
+    spec:
+      # 并发数限制
+      containerConcurrency: 80
+
+      # 请求超时（防止长时间占用资源）
+      timeoutSeconds: 60
+
+      # 容器配置
+      containers:
+      - name: akuriru-stand-container
+        image: gcr.io/PROJECT_ID/akuriru-stand:latest
+
+        # 端口
+        ports:
+        - name: http1
+          containerPort: 8080
+
+        # 资源限制 - 关键的成本控制
+        resources:
+          limits:
+            # 内存上限（超过会被杀死，防止内存泄漏导致高费用）
+            memory: 512Mi
+
+            # CPU上限（1核足够）
+            cpu: "1000m"
+
+          requests:
+            # 最小内存需求
+            memory: 256Mi
+
+            # 最小CPU需求（节省成本）
+            cpu: "500m"
+
+        # 环境变量
+        env:
+        - name: APP_ENV
+          value: "gcp"
+        - name: DEBUG_MODE
+          value: "false"
+        - name: USE_CLOUD_STORAGE
+          value: "false"  # 初期不使用，节省成本
+
+        # 健康检查 - 确保服务正常，防止资源浪费
+        livenessProbe:
+          httpGet:
+            path: /health.php
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        startupProbe:
+          httpGet:
+            path: /health.php
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 成本保护说明
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 1. minScale: 0
+#    - 无流量时缩容到0个实例
+#    - 不收取任何费用
+#    - 首次请求可能有冷启动延迟（~2秒）
+#
+# 2. maxScale: 10
+#    - 即使流量暴增，最多也只有10个实例
+#    - 最大成本可预测
+#    - 10个实例可处理 10×80 = 800 并发请求
+#
+# 3. memory: 512Mi
+#    - 限制每个实例的内存使用
+#    - 防止内存泄漏导致高费用
+#    - 512Mi足够PHP应用使用
+#
+# 4. cpu: 1000m (1核)
+#    - 1核CPU足够处理大部分请求
+#    - 防止CPU使用过多
+#
+# 5. timeout: 60s
+#    - 60秒后自动终止请求
+#    - 防止卡住的请求长时间占用资源
+#
+# 6. containerConcurrency: 80
+#    - 每个实例最多处理80个并发请求
+#    - 超过后会启动新实例（直到maxScale）
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 最坏情况成本计算
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 假设10个实例全天候运行（极端情况）:
+#
+# 内存费用: 512Mi × 10实例 × 30天 × 24小时 × 3600秒
+#         = 13,824,000 GB-秒
+#         = (13,824,000 - 360,000免费) × ¥0.0000025
+#         = ¥33.66/月
+#
+# CPU费用:  1核 × 10实例 × 30天 × 24小时 × 3600秒
+#         = 25,920,000 vCPU-秒
+#         = (25,920,000 - 180,000免费) × ¥0.00024
+#         = ¥6,177/月
+#
+# 请求费用: 假设每天100万请求 × 30天 = 3000万请求
+#         = (30,000,000 - 2,000,000免费) × ¥0.0004
+#         = ¥11,200/月
+#
+# 总计（最坏情况）: ~¥17,410/月
+#
+# 但这是极端情况（10个实例24小时满负载）
+# 实际使用中:
+# - 小型网站: ¥0-30/月
+# - 中型网站: ¥100-300/月
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
