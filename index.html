@@ -154,7 +154,6 @@
                             <!-- Editor Mode Tabs -->
                             <div class="editor-mode-tabs">
                                 <button class="editor-mode-tab active" data-mode="basic">基本編集</button>
-                                <button class="editor-mode-tab" data-mode="filters">フィルター</button>
                                 <button class="editor-mode-tab" data-mode="cropping">切り抜き</button>
                                 <button class="editor-mode-tab" data-mode="base">台座編集</button>
                             </div>
@@ -176,75 +175,6 @@
                                 </div>
 
                                 <button id="reset-image" class="control-btn secondary">画像をリセット</button>
-                            </div>
-
-                            <!-- Filters Panel -->
-                            <div id="filters-panel" class="tool-panel filters-panel">
-                                <div class="tool-panel-content">
-                                    <div class="filter-presets">
-                                        <h4>プリセットフィルター</h4>
-                                        <div class="filter-grid">
-                                            <button class="filter-btn active" data-filter="none">なし</button>
-                                            <button class="filter-btn" data-filter="grayscale">モノクロ</button>
-                                            <button class="filter-btn" data-filter="sepia">セピア</button>
-                                            <button class="filter-btn" data-filter="vintage">ビンテージ</button>
-                                            <button class="filter-btn" data-filter="brighten">明るく</button>
-                                            <button class="filter-btn" data-filter="darken">暗く</button>
-                                            <button class="filter-btn" data-filter="high-contrast">高コントラスト</button>
-                                            <button class="filter-btn" data-filter="blur">ぼかし</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="filter-adjustments">
-                                        <h4>詳細調整</h4>
-                                        
-                                        <div class="adjustment-control">
-                                            <label>
-                                                明るさ: <span id="brightness-value">0</span>
-                                            </label>
-                                            <input type="range" id="brightness-slider" class="adjustment-slider" 
-                                                   min="-100" max="100" value="0" step="1">
-                                        </div>
-
-                                        <div class="adjustment-control">
-                                            <label>
-                                                コントラスト: <span id="contrast-value">0</span>
-                                            </label>
-                                            <input type="range" id="contrast-slider" class="adjustment-slider" 
-                                                   min="-50" max="50" value="0" step="1">
-                                        </div>
-
-                                        <div class="adjustment-control">
-                                            <label>
-                                                彩度: <span id="saturation-value">0</span>
-                                            </label>
-                                            <input type="range" id="saturation-slider" class="adjustment-slider" 
-                                                   min="-50" max="50" value="0" step="1">
-                                        </div>
-
-                                        <div class="adjustment-control">
-                                            <label>
-                                                ぼかし: <span id="blur-value">0</span>
-                                            </label>
-                                            <input type="range" id="blur-slider" class="adjustment-slider" 
-                                                   min="0" max="5" value="0" step="1">
-                                        </div>
-                                    </div>
-
-                                    <div class="background-removal">
-                                        <h4>背景除去</h4>
-                                        <button id="remove-bg-btn" class="control-btn primary">
-                                            🪄 背景を自動除去
-                                        </button>
-                                        <p class="bg-removal-note">※ 白い背景の画像に最適です</p>
-                                    </div>
-
-                                    <div class="filter-actions">
-                                        <button id="filter-reset-btn" class="control-btn secondary">
-                                            🔄 リセット
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
                             <!-- Cropping Tools Panel -->
@@ -655,7 +585,6 @@
     <script src="js/order-confirmation.js?v=20251230" defer></script>
     <script src="js/main.js?v=20251230" defer></script>
     <script src="js/decorations.js?v=20251230" defer></script>
-    <script src="js/filters.js?v=20251230" defer></script>
     <script src="js/cropping.js?v=20251230" defer></script>
     <script src="js/base-editor.js?v=20251230" defer></script>
     <script src="js/editor.js?v=20251230" defer></script>
