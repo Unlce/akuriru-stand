@@ -1,0 +1,70 @@
+# .gcloudignore - Files to exclude from GCP deployment
+# See https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+
+# Git files
+.git
+.gitignore
+.github/
+.gitattributes
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node modules and dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# PHP dependencies (if using Composer)
+vendor/
+composer.phar
+
+# Test files
+tests/
+*.test.php
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+docs/
+README.md
+LICENSE
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Build files
+*.log
+.env.local
+.env.*.local
+
+# Docker files (not needed for Cloud Run as we build in Cloud Build)
+docker-compose.yml
+.dockerignore
+
+# CI/CD files
+.travis.yml
+.circleci/
+.gitlab-ci.yml
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Package manager files
+package-lock.json
+yarn.lock
+composer.lock
