@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    zlib1g-dev \
     zip \
     unzip \
     git \
@@ -40,6 +41,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         mbstring \
         xml \
         opcache
+
+# gRPC拡張機能のインストール（Firestore SDKに必要）
+RUN pecl install grpc \
+    && docker-php-ext-enable grpc
 
 # Composer のインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
