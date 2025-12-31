@@ -1,192 +1,206 @@
 <?php
-/**
- * Admin Panel
- *
- * SECURITY: Set ADMIN_PASSWORD environment variable in production
- * Example: ADMIN_PASSWORD=your_secure_password_here
- *
- * For production use, consider implementing:
- * - Database-backed user accounts
- * - Password hashing (password_hash/password_verify)
- * - Session timeout
- * - 2FA authentication
- */
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config/firestore.php';
 
-session_start();
+requireAdmin();
 
-// Set session timeout (30 minutes of inactivity)
-$sessionTimeout = 1800; // 30 minutes
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $sessionTimeout)) {
-    session_unset();
-    session_destroy();
-    header('Location: index.php');
-    exit();
-}
-$_SESSION['last_activity'] = time();
+$firestore = getFirestoreClient();
 
-// Get admin password from environment variable
-// IMPORTANT: Change this in production via environment variable
-$adminPassword = getenv('ADMIN_PASSWORD');
+// Get statistics
+$ordersRef = $firestore->collection('orders');
+$allOrders = $ordersRef->documents();
 
-if (empty($adminPassword)) {
-    // Development fallback - MUST change in production
-    $adminPassword = 'AkuriruStand2025!@#CHANGE_ME';
+$stats = [
+    'total' => 0,
+    'pending' => 0,
+    'confirmed' => 0,
+    'processing' => 0,
+    'shipped' => 0,
+    'delivered' => 0,
+    'totalRevenue' => 0,
+    'todayOrders' => 0,
+];
 
-    // Warning in development
-    if (getenv('APP_ENV') !== 'production') {
-        error_log('WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable!');
+$today = date('Y-m-d');
+
+foreach ($allOrders as $doc) {
+    if ($doc->exists()) {
+        $order = $doc->data();
+        $stats['total']++;
+        
+        $status = $order['status'] ?? 'pending';
+        if (isset($stats[$status])) {
+            $stats[$status]++;
+        }
+        
+        if (isset($order['pricing']['total'])) {
+            $stats['totalRevenue'] += $order['pricing']['total'];
+        }
+        
+        if (isset($order['createdAt'])) {
+            $createdDate = formatTimestamp($order['createdAt']);
+            if (strpos($createdDate, $today) === 0) {
+                $stats['todayOrders']++;
+            }
+        }
     }
 }
 
-define('ADMIN_PASSWORD', $adminPassword);
-
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header('Location: index.php');
-    exit();
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    if ($_POST['password'] === ADMIN_PASSWORD) {
-        $_SESSION['admin_logged_in'] = true;
-        header('Location: index.php');
-        exit();
-    } else {
-        $loginError = 'Wrong password';
-    }
-}
-
-$isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+// Get recent orders
+$recentOrders = $ordersRef->orderBy('createdAt', 'DESC')->limit(10)->documents();
 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="css/admin.css">
+    <title>ダッシュボード - アクリルスタンド工房</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f4f6f9; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card {
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card .icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        .stat-card.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .stat-card.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-confirmed { background: #17a2b8; color: #fff; }
+        .status-processing { background: #6f42c1; color: #fff; }
+        .status-shipped { background: #007bff; color: #fff; }
+        .status-delivered { background: #28a745; color: #fff; }
+    </style>
 </head>
 <body>
-<?php if (!$isLoggedIn): ?>
-    <div class="login-container">
-        <h2>Admin Login</h2>
-        <?php if (isset($loginError)): ?>
-            <div class="error"><?php echo $loginError; ?></div>
-        <?php endif; ?>
-        <form method="POST">
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required autofocus>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-grid-fill me-2"></i>アクリルスタンド工房 管理画面
+            </span>
+            <div>
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle me-1"></i><?= $_SESSION['admin_username'] ?>
+                </span>
+                <a href="/admin/logout.php" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>ログアウト
+                </a>
             </div>
-            <button type="submit" class="btn">Login</button>
-        </form>
-        <?php if (getenv('APP_ENV') !== 'production'): ?>
-            <p style="margin-top: 20px; font-size: 12px; color: #666;">
-                Development mode: Check environment variables or server logs for default password
-            </p>
-        <?php endif; ?>
-    </div>
-<?php else: ?>
-    <div class="container">
-        <div class="header">
-            <h1>🎨 アクリルスタンド工房 - 管理画面</h1>
-            <a href="?logout=1" class="btn btn-secondary">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="bi bi-speedometer2 me-2"></i>ダッシュボード</h2>
+            </div>
         </div>
 
-        <!-- 統計ダッシュボード -->
-        <div class="dashboard">
-            <div class="stat-card">
-                <h3>📊 総注文数</h3>
-                <div class="stat-value" id="totalOrders">0</div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card primary">
+                    <i class="bi bi-cart-check icon"></i>
+                    <div class="value"><?= $stats['todayOrders'] ?></div>
+                    <div>今日の注文</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>💰 総売上</h3>
-                <div class="stat-value" id="totalRevenue">¥0</div>
+            <div class="col-md-3">
+                <div class="stat-card success">
+                    <i class="bi bi-hourglass-split icon"></i>
+                    <div class="value"><?= $stats['pending'] ?></div>
+                    <div>処理待ち</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>📦 処理中</h3>
-                <div class="stat-value" id="pendingOrders">0</div>
+            <div class="col-md-3">
+                <div class="stat-card warning">
+                    <i class="bi bi-box-seam icon"></i>
+                    <div class="value"><?= $stats['total'] ?></div>
+                    <div>総注文数</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>✅ 完了</h3>
-                <div class="stat-value" id="completedOrders">0</div>
+            <div class="col-md-3">
+                <div class="stat-card info">
+                    <i class="bi bi-currency-yen icon"></i>
+                    <div class="value">¥<?= number_format($stats['totalRevenue']) ?></div>
+                    <div>総売上</div>
+                </div>
             </div>
-        </div>
-        
-        <!-- フィルター・検索 -->
-        <div class="filters">
-            <div class="filter-group">
-                <label>📅 期間</label>
-                <input type="date" id="dateFrom" class="filter-input">
-                <span>～</span>
-                <input type="date" id="dateTo" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label>🔍 検索</label>
-                <input type="text" id="searchInput" placeholder="注文番号、顧客名、メール" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label>📋 ステータス</label>
-                <select id="statusFilter" class="filter-input">
-                    <option value="">すべて</option>
-                    <option value="pending">新規</option>
-                    <option value="paid">決済確認済</option>
-                    <option value="processing">処理中</option>
-                    <option value="shipped">発送済</option>
-                    <option value="completed">完了</option>
-                    <option value="cancelled">キャンセル</option>
-                </select>
-            </div>
-            <button id="exportCsvBtn" class="btn btn-primary">📥 CSV出力</button>
-        </div>
-        
-        <div id="loading" style="display:none;">Loading...</div>
-        
-        <div class="table-container">
-            <table id="ordersTable">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="selectAll"></th>
-                        <th>注文番号</th>
-                        <th>日時</th>
-                        <th>顧客情報</th>
-                        <th>画像</th>
-                        <th>サイズ</th>
-                        <th>数量</th>
-                        <th>金額</th>
-                        <th>ステータス</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="ordersBody">
-                    <tr><td colspan="10">Loading...</td></tr>
-                </tbody>
-            </table>
         </div>
 
-        <!-- 一括操作 -->
-        <div class="bulk-actions">
-            <label>選択した注文を:</label>
-            <select id="bulkAction" class="filter-input">
-                <option value="">選択してください</option>
-                <option value="paid">決済確認済にする</option>
-                <option value="processing">処理中にする</option>
-                <option value="shipped">発送済にする</option>
-                <option value="completed">完了にする</option>
-            </select>
-            <button id="bulkApplyBtn" class="btn btn-primary">適用</button>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>最近の注文</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div></div>
+                            <a href="/admin/orders.php" class="btn btn-primary">
+                                <i class="bi bi-folder2-open me-1"></i>すべての注文を見る
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>注文番号</th>
+                                        <th>顧客名</th>
+                                        <th>金額</th>
+                                        <th>ステータス</th>
+                                        <th>注文日</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recentOrders as $doc): ?>
+                                        <?php if ($doc->exists()): $order = $doc->data(); ?>
+                                        <tr>
+                                            <td><strong><?= htmlspecialchars($order['orderNumber'] ?? '') ?></strong></td>
+                                            <td><?= htmlspecialchars($order['customer']['name'] ?? '') ?></td>
+                                            <td>¥<?= number_format($order['pricing']['total'] ?? 0) ?></td>
+                                            <td><span class="status-badge status-<?= $order['status'] ?? 'pending' ?>"><?= $order['status'] ?? 'pending' ?></span></td>
+                                            <td><?= formatTimestamp($order['createdAt'] ?? null) ?></td>
+                                            <td>
+                                                <a href="/admin/order-details.php?id=<?= $order['orderId'] ?>" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 画像プレビューモーダル -->
-    <div id="imageModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <img id="modalImage" src="" alt="Preview">
-        </div>
-    </div>
-
-    <script src="js/admin.js"></script>
-<?php endif; ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
