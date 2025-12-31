@@ -73,6 +73,11 @@ WORKDIR /var/www/html
 # アプリケーションファイルのコピー
 COPY . /var/www/html/
 
+# Composer依存関係のインストール
+RUN if [ -f composer.json ]; then \
+        composer install --no-dev --optimize-autoloader --no-interaction; \
+    fi
+
 # uploads ディレクトリの作成と権限設定
 RUN mkdir -p /var/www/html/uploads \
     && chown -R www-data:www-data /var/www/html/uploads \
@@ -81,6 +86,18 @@ RUN mkdir -p /var/www/html/uploads \
 # api ディレクトリの権限設定
 RUN chown -R www-data:www-data /var/www/html/api \
     && chmod -R 755 /var/www/html/api
+
+# admin ディレクトリの権限設定
+RUN if [ -d /var/www/html/admin ]; then \
+        chown -R www-data:www-data /var/www/html/admin && \
+        chmod -R 755 /var/www/html/admin; \
+    fi
+
+# config ディレクトリの権限設定
+RUN if [ -d /var/www/html/config ]; then \
+        chown -R www-data:www-data /var/www/html/config && \
+        chmod -R 755 /var/www/html/config; \
+    fi
 
 # .htaccess ファイルのコピー（api/htaccess → api/.htaccess）
 RUN if [ -f /var/www/html/api/htaccess ]; then \
