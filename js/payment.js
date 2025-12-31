@@ -263,15 +263,23 @@ class OrderManager {
             const analytics = this.collectAnalyticsData();
             console.log('[Payment] Analytics data collected:', analytics);
 
-            // Create order object for API
+            // Create order object for Firestore API
             const apiOrderData = {
                 customer: {
                     name: orderData.name,
                     email: orderData.email,
                     phone: orderData.phone,
-                    address: orderData.address,
-                    postal_code: orderData.postalCode
+                    zipCode: orderData.postalCode,
+                    address: orderData.address
                 },
+                size: this.selectedSize,
+                baseShape: orderData.baseType,
+                baseColor: window.imageEditor.baseColor || '#FFFFFF',
+                imageUrl: imagePath || '',
+                quantity: this.quantity,
+                paymentMethod: orderData.paymentMethod,
+                notes: orderData.specialRequest || '',
+                // Legacy fields for backward compatibility
                 order_details: {
                     product_size: this.selectedSize,
                     base_design: orderData.baseType,
