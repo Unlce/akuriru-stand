@@ -32,6 +32,9 @@
     <link rel="stylesheet" href="css/decorations.css">
     <link rel="stylesheet" href="css/editor.css">
     <link rel="stylesheet" href="css/otaku-enhancements.css">
+
+    <!-- Cropper.js Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 </head>
 <body>
     <!-- Header -->
@@ -180,6 +183,20 @@
                             <!-- Cropping Tools Panel -->
                             <div id="cropping-panel" class="tool-panel cropping-panel">
                                 <div class="tool-panel-content">
+                                    <!-- Canva-Style Cropper Button -->
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <button id="open-canva-cropper-btn" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3); transition: transform 0.2s;">
+                                            スマート切り抜き（おすすめ）
+                                        </button>
+                                        <p style="text-align: center; font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+                                            プロ仕様の切り抜きツール - 縦横比固定、回転機能付き
+                                        </p>
+                                    </div>
+
+                                    <div style="text-align: center; margin-bottom: 1rem; color: #999; font-size: 0.9rem;">
+                                        または
+                                    </div>
+
                                     <div class="cropping-tools" style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
                                         <button class="crop-tool-btn active" data-tool="rectangle" style="flex: 1; padding: 0.8rem;">
                                             矩形選択
@@ -581,11 +598,15 @@
         </div>
     </footer>
 
+    <!-- Cropper.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
     <script src="js/utils.js?v=20251230" defer></script>
     <script src="js/order-confirmation.js?v=20251230" defer></script>
     <script src="js/main.js?v=20251230" defer></script>
     <script src="js/decorations.js?v=20251230" defer></script>
     <script src="js/cropping.js?v=20251230" defer></script>
+    <script src="js/cropper-integration.js?v=20251230" defer></script>
     <script src="js/base-editor.js?v=20251230" defer></script>
     <script src="js/editor.js?v=20251230" defer></script>
     <script src="js/payment.js?v=20251230" defer></script>
