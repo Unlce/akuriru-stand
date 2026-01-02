@@ -616,18 +616,19 @@ window.addEventListener('DOMContentLoaded', () => {
                 window.canvaCropper.open(imageDataUrl, (croppedDataUrl, croppedCanvas) => {
                     console.log('[CanvaCropper] Crop completed');
 
-                    // Create new image from cropped result
-                    const img = new Image();
-                    img.onload = () => {
-                        // Update the editor with the cropped image
+                    // Convert canvas to blob then to file
+                    croppedCanvas.toBlob((blob) => {
+                        // Create a File object from the blob
+                        const file = new File([blob], 'cropped-image.png', { type: 'image/png' });
+
+                        // Load the file using the editor's loadImage method
                         if (window.imageEditor) {
-                            window.imageEditor.loadImage(img);
+                            window.imageEditor.loadImage(file);
                             if (window.toastManager) {
                                 window.toastManager.success('切り抜きが完了しました！', '成功');
                             }
                         }
-                    };
-                    img.src = croppedDataUrl;
+                    }, 'image/png');
                 });
             } else {
                 if (window.toastManager) {

@@ -664,17 +664,20 @@ window.addEventListener('DOMContentLoaded', () => {
         testBtn.addEventListener('click', () => {
             if (window.imageEditor && window.imageEditor.canvas) {
                 const imageDataUrl = window.imageEditor.canvas.toDataURL('image/png');
-                window.customCropper.open(imageDataUrl, (croppedDataUrl) => {
-                    const img = new Image();
-                    img.onload = () => {
+                window.customCropper.open(imageDataUrl, (croppedDataUrl, croppedCanvas) => {
+                    // Convert canvas to blob then to file
+                    croppedCanvas.toBlob((blob) => {
+                        // Create a File object from the blob
+                        const file = new File([blob], 'cropped-image.png', { type: 'image/png' });
+
+                        // Load the file using the editor's loadImage method
                         if (window.imageEditor) {
-                            window.imageEditor.loadImage(img);
+                            window.imageEditor.loadImage(file);
                             if (window.toastManager) {
                                 window.toastManager.success('カスタム切り抜き完了！', '成功');
                             }
                         }
-                    };
-                    img.src = croppedDataUrl;
+                    }, 'image/png');
                 });
             } else {
                 alert('まず画像をアップロードしてください');
