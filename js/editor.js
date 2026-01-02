@@ -802,6 +802,43 @@ class ImageEditor {
     setupCroppingControls() {
         console.log('[Editor] Setting up cropping controls...');
 
+        // Professional Cropper Button
+        const proCropperBtn = document.getElementById('pro-cropper-btn');
+        if (proCropperBtn) {
+            proCropperBtn.addEventListener('click', () => {
+                console.log('[Editor] Professional cropper button clicked');
+
+                if (!this.image) {
+                    alert('画像をアップロードしてからプロ仕様切り抜きを使用してください');
+                    return;
+                }
+
+                // Get current canvas as data URL
+                const dataUrl = this.canvas.toDataURL('image/png');
+
+                // Open professional cropper modal
+                if (window.professionalCropper) {
+                    window.professionalCropper.open(dataUrl, (croppedFile) => {
+                        console.log('[Editor] Cropped file received:', croppedFile);
+
+                        // Load the cropped image back into editor
+                        this.loadImage(croppedFile);
+
+                        // Show success message
+                        if (window.toastManager) {
+                            window.toastManager.success('切り抜き完了！');
+                        }
+
+                        // Switch back to basic mode
+                        this.switchMode('basic');
+                    });
+                } else {
+                    console.error('[Editor] Professional cropper not loaded');
+                    alert('プロ仕様切り抜きツールの読み込みに失敗しました。ページを再読み込みしてください。');
+                }
+            });
+        }
+
         // Tool selection
         const toolButtons = document.querySelectorAll('.crop-tool-btn');
         const brushSizeControl = document.getElementById('brush-size-control');
