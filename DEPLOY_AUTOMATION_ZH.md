@@ -67,6 +67,8 @@ git push
 
 你不需要再手动在 Cloud Shell 跑 `gcloud builds submit` 和 `gcloud run deploy`。
 
+（自动化触发测试标记：2026-01-02）
+
 ---
 
 ## 费用会不会很贵？（直白结论）
