@@ -100,8 +100,12 @@ RUN echo "<?php http_response_code(200); echo json_encode(['status' => 'healthy'
     > /var/www/html/health.php
 
 # Configure Apache for Cloud Run (dynamic port binding)
-RUN sed -i 's/Listen 80/Listen ${PORT}/' /etc/apache2/ports.conf && \
-    sed -i 's/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/' /etc/apache2/sites-available/000-default.conf
+# We create a startup script that updates the config at runtime
+RUN echo '#!/bin/bash' > /usr/local/bin/start-apache.sh && \
+    echo 'set -e' >> /usr/local/bin/start-apache.sh && \
+    echo 'sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf' >> /usr/local/bin/start-apache.sh && \
+    echo 'sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-available/000-default.conf' >> /usr/local/bin/start-apache.sh && \
+    echo 'exec apache2-foreground' >> /usr/local/bin/start-apache.sh
 
 # ポート 8080 を公開 (Cloud Run default)
 EXPOSE 8080
@@ -109,17 +113,6 @@ EXPOSE 8080
 # ヘルスチェック
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health.php || exit 1
-
-# Startup script to handle dynamic port
-COPY <<EOF /usr/local/bin/start-apache.sh
-#!/bin/bash
-set -e
-# Replace PORT placeholder in Apache config
-sed -i "s/\\\${PORT}/${PORT}/g" /etc/apache2/ports.conf
-sed -i "s/\\\${PORT}/${PORT}/g" /etc/apache2/sites-available/000-default.conf
-# Start Apache
-exec apache2-foreground
-EOF
 
 RUN chmod +x /usr/local/bin/start-apache.sh
 
