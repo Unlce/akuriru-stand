@@ -248,8 +248,9 @@ class SessionProtector {
                 return;
             }
 
+            // Use DataURL instead of ImageData for storage
             const data = {
-                imageData: window.imageEditor.getImageData(),
+                imageData: window.imageEditor.getImageDataURL(),
                 timestamp: Date.now(),
                 rotation: window.imageEditor.rotation,
                 scale: window.imageEditor.scale,
@@ -259,7 +260,11 @@ class SessionProtector {
             localStorage.setItem('acrylic_stand_draft', JSON.stringify(data));
             console.log('[SessionProtector] Auto-saved to localStorage');
         } catch (error) {
-            if (error.name === 'QuotaExceededError') {
+            // Handle various quota exceeded error names/codes
+            if (error.name === 'QuotaExceededError' || 
+                error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
+                error.code === 22 || 
+                error.code === 1014) {
                 console.warn('[SessionProtector] Storage quota exceeded. Disabling auto-save.');
                 if (this.autoSaveInterval) {
                     clearInterval(this.autoSaveInterval);
