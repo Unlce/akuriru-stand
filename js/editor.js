@@ -923,9 +923,11 @@ class ImageEditor {
     initBaseEditor() {
         const initBase = () => {
             if (window.BaseEditor) {
+                console.log('[Editor] BaseEditor found, initializing...');
                 this.baseEditor = new BaseEditor('.stand-base');
                 this.setupBaseEditorControls();
             } else {
+                console.log('[Editor] Waiting for BaseEditor...');
                 setTimeout(initBase, 100);
             }
         };

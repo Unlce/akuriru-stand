@@ -2,6 +2,7 @@
 
 class BaseEditor {
     constructor(containerSelector) {
+        console.log('[BaseEditor] Initializing with selector:', containerSelector);
         this.container = document.querySelector(containerSelector);
         this.canvas = null;
         this.ctx = null;
