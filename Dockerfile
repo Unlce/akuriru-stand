@@ -42,10 +42,6 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         xml \
         opcache
 
-# gRPC拡張機能のインストール（Firestore SDKに必要）
-RUN pecl install grpc \
-    && docker-php-ext-enable grpc
-
 # Composer のインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
