@@ -132,6 +132,7 @@ class ProfessionalCropper {
                 background: rgba(0, 0, 0, 0.85);
                 backdrop-filter: blur(8px);
                 pointer-events: auto;
+                z-index: 1;
             }
 
             .pro-cropper-container {
@@ -145,7 +146,7 @@ class ProfessionalCropper {
                 flex-direction: column;
                 box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
                 pointer-events: auto;
-                z-index: 1;
+                z-index: 2;
             }
 
             .pro-cropper-header {
