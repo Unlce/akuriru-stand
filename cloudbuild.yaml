@@ -42,7 +42,6 @@ steps:
       - '--image=asia-northeast1-docker.pkg.dev/$PROJECT_ID/akuriru-repo/akuriru-stand:$COMMIT_SHA'
       - '--region=asia-northeast1'
       - '--platform=managed'
-      - '--allow-unauthenticated'
       - '--memory=512Mi'
       - '--cpu=1'
       - '--min-instances=0'

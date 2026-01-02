@@ -10,6 +10,34 @@
 
 ## 一次性设置（做完以后就省事）
 
+### （重要）一次性权限修复：让 Cloud Run 能读取 Secret
+
+你这次 build 失败的根因是：Cloud Run 默认使用的运行身份（service account）没有权限读取 Secret Manager 里的这些密钥：
+`DB_PASSWORD`、`DB_USER`、`DB_NAME`、`CLOUD_SQL_CONNECTION_NAME`、`GCS_BUCKET`。
+
+在 Cloud Shell 运行下面这段（只需要做一次）：
+
+```bash
+export PROJECT_ID=$(gcloud config get-value project)
+export PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+
+# Cloud Run 默认运行身份（如果你没自定义 service account）
+export RUN_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+for s in DB_PASSWORD DB_USER DB_NAME CLOUD_SQL_CONNECTION_NAME GCS_BUCKET; do
+   gcloud secrets add-iam-policy-binding "$s" \
+      --member="serviceAccount:${RUN_SA}" \
+      --role="roles/secretmanager.secretAccessor"
+done
+
+# 如果你使用 Cloud SQL，通常还需要（可选但推荐）
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+   --member="serviceAccount:${RUN_SA}" \
+   --role="roles/cloudsql.client"
+```
+
+> 做完后再触发一次 build（push 一次代码即可），deploy 就不会卡在“Permission denied on secret”。
+
 ### 0) 确认你已经有 Artifact Registry 仓库
 仓库位置：Tokyo（`asia-northeast1`）
 仓库名字：`akuriru-repo`
@@ -79,3 +107,18 @@ git push
 - Artifact Registry：主要是存储费；配置“自动清理”后，成本基本可控。
 
 如果你愿意，我可以按你“每天预计 push 几次”和“现在有没有流量”给你一个更贴近实际的预算建议。
+
+---
+
+## （可选）一次性设置：让网站公开访问（allUsers）
+
+有些项目/组织策略会导致 Cloud Build 在 deploy 时无法自动设置公开 IAM，所以我把 `cloudbuild.yaml` 里“自动公开”的参数去掉了。
+
+如果你希望网站任何人都能打开，只需要在 Cloud Shell 手动执行一次：
+
+```bash
+gcloud run services add-iam-policy-binding akuriru-stand \
+   --region=asia-northeast1 \
+   --member=allUsers \
+   --role=roles/run.invoker
+```
