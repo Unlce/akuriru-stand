@@ -39,6 +39,10 @@ class BaseEditor {
         const baseElement = document.getElementById('selected-base');
         if (!baseElement) return;
         
+        // Remove default styling classes that conflict with canvas
+        baseElement.classList.remove('base-default', 'base-round', 'base-square');
+        baseElement.classList.add('base-custom-canvas');
+        
         // Create canvas if it doesn't exist
         let canvas = baseElement.querySelector('canvas');
         if (!canvas) {

@@ -553,6 +553,26 @@ body {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Custom Base for Canvas Editor */
+.base-custom-canvas {
+    width: 100px;
+    height: 33px;
+    position: relative;
+    transform: perspective(400px) rotateX(15deg);
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.base-custom-canvas canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.base-custom-canvas::before {
+    display: none !important;
+}
+
 /* 圆形底座 - 金色 */
 .base-round {
     background: linear-gradient(to bottom, 
