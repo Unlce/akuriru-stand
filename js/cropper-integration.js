@@ -149,6 +149,7 @@ class CanvaCropper {
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.8);
                 backdrop-filter: blur(5px);
+                z-index: 1;
             }
 
             .cropper-modal-content {
@@ -161,6 +162,7 @@ class CanvaCropper {
                 display: flex;
                 flex-direction: column;
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                z-index: 2;
             }
 
             .cropper-header {
