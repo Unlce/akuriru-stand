@@ -34,14 +34,14 @@ class ProfessionalCropper {
             <div class="pro-cropper-backdrop"></div>
             <div class="pro-cropper-container">
                 <div class="pro-cropper-header">
-                    <h2>✂️ プロ仕様切り抜きツール</h2>
+                    <h2>プロ仕様切り抜きツール</h2>
                     <button class="pro-close-btn" type="button">✕</button>
                 </div>
 
                 <div class="pro-cropper-body">
                     <div class="pro-sidebar">
                         <div class="pro-section">
-                            <h3>📐 縦横比</h3>
+                            <h3>縦横比</h3>
                             <div class="pro-ratio-grid">
                                 <button class="pro-ratio-btn active" data-ratio="free" type="button">
                                     <span class="icon">⬛</span>
@@ -63,7 +63,7 @@ class ProfessionalCropper {
                         </div>
 
                         <div class="pro-section">
-                            <h3>🔄 回転</h3>
+                            <h3>回転</h3>
                             <div class="pro-rotation">
                                 <label>
                                     <span class="pro-label">角度:</span>
@@ -78,7 +78,7 @@ class ProfessionalCropper {
                         </div>
 
                         <div class="pro-section">
-                            <h3>🔍 ズーム</h3>
+                            <h3>ズーム</h3>
                             <div class="pro-zoom">
                                 <button class="pro-zoom-btn" data-action="out" type="button">−</button>
                                 <button class="pro-zoom-btn" data-action="in" type="button">+</button>
@@ -96,7 +96,7 @@ class ProfessionalCropper {
 
                 <div class="pro-cropper-footer">
                     <button class="pro-btn pro-btn-cancel" type="button">キャンセル</button>
-                    <button class="pro-btn pro-btn-apply" type="button">✓ 完了</button>
+                    <button class="pro-btn pro-btn-apply" type="button">完了</button>
                 </div>
             </div>
         `;

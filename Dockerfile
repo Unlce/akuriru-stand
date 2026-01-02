@@ -114,6 +114,10 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health.php || exit 1
 
+# Ensure all files are readable by www-data
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
 RUN chmod +x /usr/local/bin/start-apache.sh
 
 # Apache を起動 (with port substitution)
