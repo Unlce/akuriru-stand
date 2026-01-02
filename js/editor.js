@@ -35,7 +35,6 @@ class ImageEditor {
         this.initDecorations();
         this.initCroppingTool();
         this.initBaseEditor();
-        this.initFilters();
         this.initEditorModes();
         
         // Try to restore previous session
@@ -922,9 +921,6 @@ class ImageEditor {
      * Initialize base editor
      */
     initBaseEditor() {
-        // Temporarily disabled - using predefined base styles from CSS instead
-        // Custom base editor can be re-enabled in future versions
-        /*
         const initBase = () => {
             if (window.BaseEditor) {
                 this.baseEditor = new BaseEditor('.stand-base');
@@ -934,174 +930,20 @@ class ImageEditor {
             }
         };
         initBase();
-        */
     }
 
     /**
      * Initialize image filters
      */
     initFilters() {
-        const initFilters = () => {
-            if (window.ImageFilters && this.canvas && this.ctx) {
-                this.filterManager = new ImageFilters(this.canvas, this.ctx);
-                // Delay filter controls setup to ensure DOM is ready
-                setTimeout(() => {
-                    this.setupFilterControls();
-                    console.log('[Editor] Filters initialized and controls setup');
-                }, 500);
-            } else {
-                setTimeout(initFilters, 100);
-            }
-        };
-        initFilters();
+        // Filters removed
     }
 
     /**
      * Setup filter controls
      */
     setupFilterControls() {
-        console.log('[Editor] Setting up filter controls...');
-        
-        // Preset filter buttons
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        console.log('[Editor] Found', filterButtons.length, 'filter buttons');
-        
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const filter = btn.dataset.filter;
-                console.log('[Editor] Filter button clicked:', filter);
-                
-                // Update active state
-                filterButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                console.log('[Editor] Active class updated');
-                
-                // Apply filter
-                if (this.filterManager) {
-                    console.log('[Editor] Applying filter via filterManager...');
-                    // Save original image data if not already saved
-                    if (!this.filterManager.originalImageData) {
-                        this.filterManager.saveOriginalImageData();
-                        console.log('[Editor] Original image data saved');
-                    }
-                    // Apply filter
-                    this.filterManager.applyFilter(filter);
-                    console.log('[Editor] Filter applied:', filter);
-                } else {
-                    console.error('[Editor] filterManager not initialized!');
-                }
-            });
-        });
-
-        // Brightness slider
-        const brightnessSlider = document.getElementById('brightness-slider');
-        const brightnessValue = document.getElementById('brightness-value');
-        if (brightnessSlider && brightnessValue) {
-            brightnessSlider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                brightnessValue.textContent = value;
-                if (this.filterManager) {
-                    this.filterManager.applyAdjustment('brightness', value);
-                }
-            });
-        }
-
-        // Contrast slider
-        const contrastSlider = document.getElementById('contrast-slider');
-        const contrastValue = document.getElementById('contrast-value');
-        if (contrastSlider && contrastValue) {
-            contrastSlider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                contrastValue.textContent = value;
-                if (this.filterManager) {
-                    this.filterManager.applyAdjustment('contrast', value);
-                }
-            });
-        }
-
-        // Saturation slider
-        const saturationSlider = document.getElementById('saturation-slider');
-        const saturationValue = document.getElementById('saturation-value');
-        if (saturationSlider && saturationValue) {
-            saturationSlider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                saturationValue.textContent = value;
-                if (this.filterManager) {
-                    this.filterManager.applyAdjustment('saturation', value);
-                }
-            });
-        }
-
-        // Blur slider
-        const blurSlider = document.getElementById('blur-slider');
-        const blurValue = document.getElementById('blur-value');
-        if (blurSlider && blurValue) {
-            blurSlider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                blurValue.textContent = value;
-                if (this.filterManager) {
-                    this.filterManager.applyAdjustment('blur', value);
-                }
-            });
-        }
-
-        // Background removal button
-        const removeBgBtn = document.getElementById('remove-bg-btn');
-        if (removeBgBtn) {
-            removeBgBtn.addEventListener('click', () => {
-                if (this.filterManager) {
-                    this.filterManager.smartRemoveBackground();
-                }
-            });
-        }
-
-        // Filter reset button
-        const filterResetBtn = document.getElementById('filter-reset-btn');
-        if (filterResetBtn) {
-            filterResetBtn.addEventListener('click', () => {
-                console.log('[Editor] Filter reset button clicked');
-                
-                if (this.filterManager) {
-                    // Reset filter manager
-                    this.filterManager.reset();
-                    this.filterManager.currentFilter = 'none';
-                    this.filterManager.adjustments = {
-                        brightness: 0,
-                        contrast: 0,
-                        saturation: 0,
-                        blur: 0
-                    };
-                    console.log('[Editor] Filter manager reset');
-                }
-                
-                // Re-render the original image
-                this.render();
-                console.log('[Editor] Image re-rendered');
-                
-                // Reset sliders
-                if (brightnessSlider) brightnessSlider.value = 0;
-                if (contrastSlider) contrastSlider.value = 0;
-                if (saturationSlider) saturationSlider.value = 0;
-                if (blurSlider) blurSlider.value = 0;
-                
-                // Reset value displays
-                if (brightnessValue) brightnessValue.textContent = '0';
-                if (contrastValue) contrastValue.textContent = '0';
-                if (saturationValue) saturationValue.textContent = '0';
-                if (blurValue) blurValue.textContent = '0';
-                
-                // Reset active filter button to 'none'
-                filterButtons.forEach(b => {
-                    if (b.dataset.filter === 'none') {
-                        b.classList.add('active');
-                    } else {
-                        b.classList.remove('active');
-                    }
-                });
-                
-                console.log('[Editor] All filter controls reset');
-            });
-        }
+        // Filters removed
     }
 
     /**
@@ -1272,12 +1114,10 @@ class ImageEditor {
 
         // Show/hide panels
         const basicPanel = document.getElementById('basic-editing-panel');
-        const filtersPanel = document.getElementById('filters-panel');
         const croppingPanel = document.getElementById('cropping-panel');
         const basePanel = document.getElementById('base-editor-panel');
 
         if (basicPanel) basicPanel.classList.remove('active');
-        if (filtersPanel) filtersPanel.classList.remove('active');
         if (croppingPanel) croppingPanel.classList.remove('active');
         if (basePanel) basePanel.classList.remove('active');
 
@@ -1302,21 +1142,9 @@ class ImageEditor {
             }
         }
 
-        // Save original image data when entering filters mode
-        if (mode === 'filters' && this.filterManager && this.image) {
-            this.filterManager.saveOriginalImageData();
-        }
-
         // Show appropriate panel
         if (mode === 'basic' && basicPanel) {
             basicPanel.classList.add('active');
-        } else if (mode === 'filters' && filtersPanel) {
-            if (!this.image) {
-                alert('画像をアップロードしてからフィルターを使用してください');
-                this.switchMode('basic');
-                return;
-            }
-            filtersPanel.classList.add('active');
         } else if (mode === 'cropping' && croppingPanel) {
             if (!this.image) {
                 alert('画像をアップロードしてから切り抜きツールを使用してください');

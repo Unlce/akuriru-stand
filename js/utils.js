@@ -259,7 +259,15 @@ class SessionProtector {
             localStorage.setItem('acrylic_stand_draft', JSON.stringify(data));
             console.log('[SessionProtector] Auto-saved to localStorage');
         } catch (error) {
-            console.error('[SessionProtector] Auto-save failed:', error);
+            if (error.name === 'QuotaExceededError') {
+                console.warn('[SessionProtector] Storage quota exceeded. Disabling auto-save.');
+                if (this.autoSaveInterval) {
+                    clearInterval(this.autoSaveInterval);
+                    this.autoSaveInterval = null;
+                }
+            } else {
+                console.error('[SessionProtector] Auto-save failed:', error);
+            }
         }
     }
 
